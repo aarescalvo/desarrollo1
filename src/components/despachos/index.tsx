@@ -86,6 +86,11 @@ export function DespachosModule({ operador }: Props) {
 
   useEffect(() => {
     fetchDespachos()
+    
+    // Cleanup: cerrar dialog al desmontar el componente
+    return () => {
+      setDialogOpen(false)
+    }
   }, [])
 
   const fetchDespachos = async () => {

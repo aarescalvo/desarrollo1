@@ -262,9 +262,19 @@ export default function FrigorificoApp() {
 
   // Check for existing session and validate against database
   useEffect(() => {
+    // Limpiar cualquier overlay huérfano al cargar
+    const cleanupOverlays = () => {
+      const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [data-slot="dialog-overlay"], .fixed.inset-0.bg-black\\/50')
+      overlays.forEach(el => el.remove())
+      document.body.style.overflow = ''
+      document.body.style.pointerEvents = ''
+    }
+    cleanupOverlays()
+    
     // Timeout de seguridad para evitar pantalla congelada
     const safetyTimeout = setTimeout(() => {
       setLoading(false)
+      cleanupOverlays() // También limpiar al finalizar el timeout
     }, 5000)
     
     const validateSession = async () => {
@@ -310,6 +320,35 @@ export default function FrigorificoApp() {
       fetchStats()
     }
   }, [operador])
+  
+  // Cleanup: Limpiar overlays huérfanos al cambiar de página
+  useEffect(() => {
+    // Eliminar cualquier backdrop de dialog que haya quedado huérfano
+    const cleanOrphanOverlays = () => {
+      const overlays = document.querySelectorAll('[data-radix-popper-content], [data-radix-dialog-overlay], [data-slot="dialog-overlay"]')
+      overlays.forEach(el => el.remove())
+      
+      // También eliminar elementos con z-50 que puedan ser overlays
+      const z50Elements = document.querySelectorAll('.fixed.inset-0.z-50, .fixed.inset-0[data-state]')
+      z50Elements.forEach(el => {
+        if (el.getAttribute('data-radix-dialog-overlay') !== null || el.classList.contains('bg-black/50')) {
+          el.remove()
+        }
+      })
+      
+      // Restaurar scroll del body
+      document.body.style.overflow = ''
+      document.body.style.pointerEvents = ''
+    }
+    
+    // Ejecutar limpieza inmediatamente
+    cleanOrphanOverlays()
+    
+    // Y también después de un pequeño delay para asegurar que el DOM se actualizó
+    const timeout = setTimeout(cleanOrphanOverlays, 100)
+    
+    return () => clearTimeout(timeout)
+  }, [currentPage])
 
   const fetchTropas = async () => {
     try {

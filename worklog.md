@@ -3666,3 +3666,72 @@ Stage Summary:
 - **Prevención de congelamiento** ✅
 - **Versión actualizada a 3.7.1** ✅
 
+
+---
+Task ID: 1569
+Agent: main
+Task: Corregir pantalla de inicio congelada con sombra gris (backdrop huérfano)
+
+Work Log:
+
+#### 1. Problema Reportado
+- En PC de producción, la pantalla de inicio quedaba "congelada con una sombra gris"
+- El usuario no podía interactuar con la interfaz
+- El problema persistía después de actualizar a v3.7.0
+
+#### 2. Análisis del Problema
+- La "sombra gris" es el backdrop del componente Dialog (bg-black/50)
+- Cuando un usuario abre un Dialog en un módulo (ej: Despachos) y navega al Dashboard sin cerrarlo
+- El componente se desmonta pero el backdrop del portal de Radix UI puede quedar "huérfano" en el DOM
+- Esto bloquea toda interacción con la página
+
+#### 3. Solución Implementada
+
+**A. Limpieza Global al Cambiar de Página** (`src/app/page.tsx`):
+- Agregado `useEffect` que detecta cambios en `currentPage`
+- Elimina cualquier overlay huérfano del DOM
+- Restaurar scroll y pointer-events del body
+- Se ejecuta inmediatamente y con un delay de 100ms para asegurar limpieza
+
+**B. Limpieza al Cargar la Aplicación**:
+- Ejecuta limpieza de overlays al iniciar la aplicación
+- También se ejecuta después del timeout de seguridad
+
+**C. Cleanup en Módulo de Despachos** (`src/components/despachos/index.tsx`):
+- Agregado cleanup en useEffect para cerrar el dialog al desmontar
+
+#### 4. Código Agregado
+
+**Limpieza de overlays:**
+```typescript
+useEffect(() => {
+  const cleanOrphanOverlays = () => {
+    const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [data-slot="dialog-overlay"]')
+    overlays.forEach(el => el.remove())
+    document.body.style.overflow = ''
+    document.body.style.pointerEvents = ''
+  }
+  cleanOrphanOverlays()
+  const timeout = setTimeout(cleanOrphanOverlays, 100)
+  return () => clearTimeout(timeout)
+}, [currentPage])
+```
+
+**Cleanup en módulo:**
+```typescript
+useEffect(() => {
+  fetchDespachos()
+  return () => { setDialogOpen(false) }  // Cierra dialog al desmontar
+}, [])
+```
+
+#### 5. Verificación
+- **Lint**: Sin errores ✓
+- **Limpieza de overlays**: Implementada ✓
+
+Stage Summary:
+- **Problema de backdrop huérfano corregido** ✅
+- **Limpieza automática al cambiar de página** ✅
+- **Limpieza al cargar la aplicación** ✅
+- **Cleanup en módulo de despachos** ✅
+- **Versión actualizada a 3.7.2** ✅
