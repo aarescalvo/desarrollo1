@@ -280,8 +280,12 @@ async function seedSimulacionCompleta() {
 
       const codigo = `B ${fechaRecepcion.getFullYear()} ${String(i).padStart(4, '0')}`
       
-      const tropa = await db.tropa.create({
-        data: {
+      const tropa = await db.tropa.upsert({
+        where: { numero: i },
+        update: {
+          estado: i === 1 ? 'FAENADO' : i === 2 ? 'EN_FAENA' : 'RECIBIDO',
+        },
+        create: {
           codigo,
           codigoSimplificado: `B${String(i).padStart(4, '0')}`,
           numero: i,
@@ -301,13 +305,18 @@ async function seedSimulacionCompleta() {
       })
       tropas.push(tropa)
 
-      // Crear animales para cada tropa
+      // Crear animales para cada tropa (usar upsert para evitar duplicados)
       for (let j = 1; j <= tropa.cantidadCabezas; j++) {
-        const animal = await db.animal.create({
-          data: {
+        const animalCodigo = `${codigo}-${String(j).padStart(3, '0')}`
+        const animal = await db.animal.upsert({
+          where: { codigo: animalCodigo },
+          update: {
+            estado: i === 1 ? 'FAENADO' : 'RECIBIDO',
+          },
+          create: {
             tropaId: tropa.id,
             numero: j,
-            codigo: `${codigo}-${String(j).padStart(3, '0')}`,
+            codigo: animalCodigo,
             tipoAnimal: j % 3 === 0 ? 'NO' : j % 3 === 1 ? 'VA' : 'TO',
             pesoVivo: 420 + Math.floor(Math.random() * 80),
             estado: i === 1 ? 'FAENADO' : 'RECIBIDO',
@@ -324,8 +333,12 @@ async function seedSimulacionCompleta() {
     console.log('📋 Creando lista de faena y romaneos...')
     const tropaFaenada = tropas[0]
     
-    const listaFaena = await db.listaFaena.create({
-      data: {
+    const listaFaena = await db.listaFaena.upsert({
+      where: { numero: 1 },
+      update: {
+        cantidadTotal: tropaFaenada.cantidadCabezas,
+      },
+      create: {
         numero: 1,
         fecha: new Date(hoy.getTime() - 2 * 24 * 60 * 60 * 1000),
         estado: 'CERRADA',
@@ -335,7 +348,7 @@ async function seedSimulacionCompleta() {
       }
     })
 
-    // Crear romaneos
+    // Crear romaneos (usar upsert para evitar duplicados)
     const romaneos = []
     let garronCounter = 1
     const animalesFaenados = animales.filter(a => a.tropaId === tropaFaenada.id)
@@ -347,11 +360,20 @@ async function seedSimulacionCompleta() {
       const pesoVivo = animal.pesoVivo?.toNumber?.() || animal.pesoVivo || 450
       const rinde = (pesoTotal / pesoVivo) * 100
 
-      const romaneo = await db.romaneo.create({
-        data: {
+      const romaneo = await db.romaneo.upsert({
+        where: { 
+          listaFaenaId_garron: { listaFaenaId: listaFaena.id, garron: garronCounter }
+        },
+        update: {
+          pesoMediaIzq: pesoIzq,
+          pesoMediaDer: pesoDer,
+          pesoTotal,
+          rinde,
+        },
+        create: {
           listaFaenaId: listaFaena.id,
           fecha: new Date(hoy.getTime() - 2 * 24 * 60 * 60 * 1000),
-          garron: garronCounter++,
+          garron: garronCounter,
           tropaCodigo: tropaFaenada.codigo,
           numeroAnimal: animal.numero,
           tipoAnimal: animal.tipoAnimal as any,
@@ -366,28 +388,36 @@ async function seedSimulacionCompleta() {
           operadorId: operador.id
         }
       })
+      garronCounter++
       romaneos.push(romaneo)
 
-      // Crear medias reses
-      await db.mediaRes.create({
-        data: {
+      // Crear medias reses (usar upsert para evitar duplicados)
+      const codigoIzq = `${tropaFaenada.codigo}-${String(animal.numero).padStart(3, '0')}-I`
+      const codigoDer = `${tropaFaenada.codigo}-${String(animal.numero).padStart(3, '0')}-D`
+      
+      await db.mediaRes.upsert({
+        where: { codigo: codigoIzq },
+        update: { peso: pesoIzq },
+        create: {
           romaneoId: romaneo.id,
           lado: 'IZQUIERDA',
           peso: pesoIzq,
           sigla: 'A',
-          codigo: `${tropaFaenada.codigo}-${String(animal.numero).padStart(3, '0')}-I`,
+          codigo: codigoIzq,
           estado: 'EN_CAMARA',
           camaraId: camaras[0].id,
           usuarioFaenaId: clienteUsuarioFaena?.id
         }
       })
-      await db.mediaRes.create({
-        data: {
+      await db.mediaRes.upsert({
+        where: { codigo: codigoDer },
+        update: { peso: pesoDer },
+        create: {
           romaneoId: romaneo.id,
           lado: 'DERECHA',
           peso: pesoDer,
           sigla: 'A',
-          codigo: `${tropaFaenada.codigo}-${String(animal.numero).padStart(3, '0')}-D`,
+          codigo: codigoDer,
           estado: 'EN_CAMARA',
           camaraId: camaras[0].id,
           usuarioFaenaId: clienteUsuarioFaena?.id
@@ -399,8 +429,19 @@ async function seedSimulacionCompleta() {
 
     // ==================== 9. STOCK CAMARAS ====================
     console.log('📋 Actualizando stock de cámaras...')
-    await db.stockMediaRes.create({
-      data: {
+    await db.stockMediaRes.upsert({
+      where: {
+        camaraId_tropaCodigo_especie: {
+          camaraId: camaras[0].id,
+          tropaCodigo: tropaFaenada.codigo,
+          especie: 'BOVINO'
+        }
+      },
+      update: {
+        cantidad: animalesFaenados.length * 2,
+        pesoTotal: romaneos.reduce((sum, r) => sum + (r.pesoTotal?.toNumber?.() || r.pesoTotal || 0), 0)
+      },
+      create: {
         camaraId: camaras[0].id,
         tropaCodigo: tropaFaenada.codigo,
         especie: 'BOVINO',
@@ -415,8 +456,13 @@ async function seedSimulacionCompleta() {
     const despachos = []
     const fechaDespacho = new Date(hoy.getTime() - 1 * 24 * 60 * 60 * 1000)
     
-    const despacho = await db.despacho.create({
-      data: {
+    const despacho = await db.despacho.upsert({
+      where: { numero: 1 },
+      update: {
+        kgTotal: romaneos.reduce((sum, r) => sum + (r.pesoTotal?.toNumber?.() || r.pesoTotal || 0), 0) / 2,
+        cantidadMedias: animalesFaenados.length,
+      },
+      create: {
         numero: 1,
         fecha: fechaDespacho,
         destino: clienteUsuarioFaena?.nombre || 'Cliente',
@@ -435,8 +481,14 @@ async function seedSimulacionCompleta() {
     const facturas = []
     
     // Factura 1 - Cliente 1
-    const factura1 = await db.factura.create({
-      data: {
+    const factura1 = await db.factura.upsert({
+      where: { numero: '0001-00000001' },
+      update: {
+        subtotal: 150000,
+        iva: 31500,
+        total: 181500,
+      },
+      create: {
         numero: '0001-00000001',
         numeroInterno: 1,
         clienteId: clientes[0].id,
@@ -464,8 +516,14 @@ async function seedSimulacionCompleta() {
     facturas.push(factura1)
 
     // Factura 2 - Pendiente
-    const factura2 = await db.factura.create({
-      data: {
+    const factura2 = await db.factura.upsert({
+      where: { numero: '0001-00000002' },
+      update: {
+        subtotal: 200000,
+        iva: 42000,
+        total: 242000,
+      },
+      create: {
         numero: '0001-00000002',
         numeroInterno: 2,
         clienteId: clientes[1].id,

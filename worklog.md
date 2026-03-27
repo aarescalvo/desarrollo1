@@ -1218,8 +1218,8 @@ Work Log:
 Stage Summary:
 - **Worklog actualizado** ✅
 - **Error en seed corregido** ✅ (precioActual → precioArs)
-- **Pendientes documentados** ✅
-- **Versión actualizada a 3.6.1** ✅
+- **Seed convertido a idempotente** ✅ (create → upsert en todos los modelos)
+- **Versión actualizada a 3.6.2** ✅
 
 ---
 Task ID: 1565
