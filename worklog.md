@@ -3612,3 +3612,57 @@ Stage Summary:
 - **Sugerencias de despacho automáticas** ✅
 - **Versión actualizada a 3.7.0** ✅
 
+---
+Task ID: 1569
+Agent: main
+Task: Corregir pantalla congelada con sombra gris en producción
+
+Work Log:
+
+#### 1. Problema Reportado
+- En PC de producción, la pantalla de inicio quedaba congelada con una "sombra gris"
+- El sistema no respondía después de actualizar
+
+#### 2. Causas Identificadas
+1. **EditableScreenWrapper**: El estado `loaded` podía no actualizarse si la API fallaba
+2. **Validación de sesión**: Sin timeout, podía quedar esperando indefinidamente
+3. **Sin timeouts de seguridad**: Las peticiones podían colgarse
+
+#### 3. Correcciones Realizadas
+
+**A. EditableScreenWrapper** (`src/components/ui/editable-screen.tsx`):
+- Agregado timeout de seguridad de 3 segundos
+- Agregado timeout de 5 segundos en fetch de layout
+- Mejorado el indicador de carga (spinner animado)
+
+**B. Pantalla Principal** (`src/app/page.tsx`):
+- Agregado timeout de seguridad de 5 segundos en validación de sesión
+- Agregado AbortController con timeout de 3 segundos en petición auth
+- Limpieza correcta de timeouts en cleanup
+
+#### 4. Código Corregido
+
+**Timeout de seguridad:**
+```typescript
+const safetyTimeout = setTimeout(() => {
+  setLoading(false)
+}, 5000)
+```
+
+**Fetch con timeout:**
+```typescript
+const controller = new AbortController()
+const timeoutId = setTimeout(() => controller.abort(), 3000)
+const res = await fetch(url, { signal: controller.signal })
+```
+
+#### 5. Verificación
+- **Lint**: Sin errores ✓
+- **Timeouts de seguridad**: Implementados ✓
+
+Stage Summary:
+- **Timeouts de seguridad agregados** ✅
+- **Pantalla de carga mejorada** ✅
+- **Prevención de congelamiento** ✅
+- **Versión actualizada a 3.7.1** ✅
+

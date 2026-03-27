@@ -292,12 +292,21 @@ export function EditableScreenWrapper({ moduloId, operador, children, bloquesIni
   const isAdmin = operador.rol === 'ADMINISTRADOR' || (operador.permisos?.puedeAdminSistema ?? false)
 
   useEffect(() => {
+    // Timeout de seguridad para evitar pantalla congelada
+    const safetyTimeout = setTimeout(() => {
+      setLoaded(true)
+    }, 3000)
+    
     fetchLayout()
+    
+    return () => clearTimeout(safetyTimeout)
   }, [moduloId])
 
   const fetchLayout = async () => {
     try {
-      const res = await fetch(`/api/layout-modulo?modulo=${moduloId}`)
+      const res = await fetch(`/api/layout-modulo?modulo=${moduloId}`, {
+        signal: AbortSignal.timeout(5000) // Timeout de 5 segundos
+      })
       const data = await res.json()
       
       if (data.success) {
@@ -306,7 +315,8 @@ export function EditableScreenWrapper({ moduloId, operador, children, bloquesIni
         if (data.data?.textos) setTextos(data.data.textos)
       }
     } catch (error) {
-      console.error('Error loading layout:', error)
+      // No mostrar error, usar valores por defecto
+      console.log('Layout no encontrado, usando valores por defecto')
     } finally {
       setLoaded(true)
     }
@@ -389,7 +399,14 @@ export function EditableScreenWrapper({ moduloId, operador, children, bloquesIni
   }
 
   if (!loaded) {
-    return <div className="min-h-screen flex items-center justify-center"><div className="animate-pulse">Cargando...</div></div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <div className="flex flex-col items-center gap-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+          <div className="text-stone-500 text-sm">Cargando...</div>
+        </div>
+      </div>
+    )
   }
 
   const cantidadTextos = Object.keys(textos).length

@@ -262,13 +262,25 @@ export default function FrigorificoApp() {
 
   // Check for existing session and validate against database
   useEffect(() => {
+    // Timeout de seguridad para evitar pantalla congelada
+    const safetyTimeout = setTimeout(() => {
+      setLoading(false)
+    }, 5000)
+    
     const validateSession = async () => {
       const savedOperador = localStorage.getItem('operador')
       if (savedOperador) {
         try {
           const parsed = JSON.parse(savedOperador)
           // Validate that the operator still exists in the database
-          const res = await fetch(`/api/auth?operadorId=${parsed.id}`)
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 3000)
+          
+          const res = await fetch(`/api/auth?operadorId=${parsed.id}`, {
+            signal: controller.signal
+          })
+          clearTimeout(timeoutId)
+          
           const data = await res.json()
           if (data.success && data.data) {
             // Operator exists, use the fresh data from DB
@@ -284,8 +296,11 @@ export default function FrigorificoApp() {
         }
       }
       setLoading(false)
+      clearTimeout(safetyTimeout)
     }
     validateSession()
+    
+    return () => clearTimeout(safetyTimeout)
   }, [])
 
   // Fetch data
