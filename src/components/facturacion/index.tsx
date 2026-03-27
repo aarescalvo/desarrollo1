@@ -6,7 +6,7 @@ import {
   Plus, Search, Loader2, Printer, RefreshCw, Edit,
   Trash2, CreditCard, History, BarChart3, Package,
   ShoppingCart, TrendingUp, Calendar, Users, Settings,
-  ChevronDown, ChevronUp, AlertCircle, Check, X, PriceTag,
+  ChevronDown, ChevronUp, AlertCircle, Check, X, Tag,
   ArrowUpDown, Save, TrendingDown
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -997,7 +997,7 @@ export function FacturacionModule({ operador }: Props) {
               Productos
             </TabsTrigger>
             <TabsTrigger value="preciosCliente" className="flex items-center gap-2">
-              <PriceTag className="w-4 h-4" />
+              <Tag className="w-4 h-4" />
               Precios Cliente
             </TabsTrigger>
             <TabsTrigger value="porCliente" className="flex items-center gap-2">
@@ -1279,7 +1279,7 @@ export function FacturacionModule({ operador }: Props) {
             <Card className="border-0 shadow-md">
               <CardHeader className="bg-stone-50 rounded-t-lg flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
-                  <PriceTag className="w-5 h-5 text-amber-500" />
+                  <Tag className="w-5 h-5 text-amber-500" />
                   Precios Especiales por Cliente
                 </CardTitle>
                 <Button onClick={handleNuevoPrecioCliente} className="bg-amber-500 hover:bg-amber-600">
@@ -1290,7 +1290,7 @@ export function FacturacionModule({ operador }: Props) {
               <CardContent className="p-0">
                 {preciosCliente.length === 0 ? (
                   <div className="py-12 text-center text-stone-400">
-                    <PriceTag className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <Tag className="w-16 h-16 mx-auto mb-4 opacity-50" />
                     <p>No hay precios especiales configurados</p>
                     <Button onClick={handleNuevoPrecioCliente} className="mt-4 bg-amber-500 hover:bg-amber-600">
                       Configurar primer precio
