@@ -261,6 +261,8 @@ model Cliente {
   declaracionesJuradas   DeclaracionJurada[]
   reclamos               ReclamoCliente[]
   mediasRes              MediaRes[]
+  preciosEspeciales      PrecioCliente[]
+  despachos              Despacho[]
 }
 
 // ==================== TRANSPORTISTAS ====================
@@ -1092,6 +1094,7 @@ model Factura {
   
   detalles          DetalleFactura[]
   pagos             PagoFactura[]
+  despachos         Despacho[]
   
   @@index([numero])
   @@index([clienteId])
@@ -1104,7 +1107,11 @@ model DetalleFactura {
   facturaId         String
   factura           Factura       @relation(fields: [facturaId], references: [id], onDelete: Cascade)
   
-  // Producto facturado
+  // Producto vendible (catálogo)
+  productoVendibleId String?
+  productoVendible   ProductoVendible? @relation(fields: [productoVendibleId], references: [id])
+  
+  // Tipo de producto (compatibilidad)
   tipoProducto      TipoProductoFactura  // MEDIA_RES, CUARTO, MENUDENCIA, OTRO
   descripcion       String                // Descripción del producto
   
@@ -1112,12 +1119,15 @@ model DetalleFactura {
   cantidad          Float         @default(1)
   unidad            String        @default("KG")  // KG, UN
   precioUnitario    Float         @default(0)
+  precioSugerido    Float?                         // Precio sugerido del sistema
+  precioConfirmado  Boolean       @default(false)  // Si el usuario confirmó el precio
   subtotal          Float         @default(0)
   
   // Trazabilidad (opcional)
   tropaCodigo       String?       // Código de tropa
   garron            Int?          // Número de garrón
   mediaResId        String?       // ID de media res
+  despachoId        String?       // ID del despacho/remito origen
   
   // Datos del animal/producto
   pesoKg            Float?        // Peso en KG
@@ -1127,6 +1137,7 @@ model DetalleFactura {
   
   @@index([facturaId])
   @@index([tipoProducto])
+  @@index([productoVendibleId])
 }
 
 enum EstadoFactura {
@@ -1627,8 +1638,23 @@ model Despacho {
   ticketPesajeId    String?                         // ID del pesaje de camión de salida
   ticketPesaje      PesajeCamion?   @relation(fields: [ticketPesajeId], references: [id])
   
+  // Cliente (usuario de faena que recibe el despacho)
+  clienteId         String?
+  cliente           Cliente?        @relation(fields: [clienteId], references: [id])
+  
   // Estado
   estado            EstadoDespacho  @default(PENDIENTE)
+  
+  // Facturación
+  facturado         Boolean         @default(false)
+  facturaId         String?
+  factura           Factura?        @relation(fields: [facturaId], references: [id])
+  fechaFacturacion  DateTime?
+  
+  // Valores estimados para facturación
+  subtotalEstimado  Float?
+  ivaEstimado       Float?
+  totalEstimado     Float?
   
   // Observaciones
   observaciones     String?
@@ -1642,9 +1668,10 @@ model Despacho {
   
   items             DespachoItem[]
   
-  @@index([fecha])
   @@index([estado])
-  @@index([destino])
+  @@index([fecha])
+  @@index([clienteId])
+  @@index([facturado])
 }
 
 model DespachoItem {
@@ -2439,4 +2466,122 @@ model ServicioFaena {
   
   @@index([activo])
   @@index([especie])
+}
+
+// ==================== PRODUCTOS VENDIBLES (CATÁLOGO FACTURACIÓN) ====================
+
+model ProductoVendible {
+  id                String              @id @default(cuid())
+  codigo            String              @unique  // Código corto (MV001, SF001)
+  nombre            String                       // "Media Res Bovina"
+  descripcion       String?
+  
+  // Clasificación
+  categoria         CategoriaProductoVendible
+  subcategoria      String?                      // "Bovino", "Equino"
+  especie           Especie?                     // Si aplica a especie específica
+  
+  // Tipo de venta
+  tipoVenta         TipoVenta           @default(POR_KG)  // POR_KG, POR_UNIDAD, POR_ANIMAL
+  
+  // Unidades
+  unidadMedida      String              @default("KG")    // KG, UN, ANIMAL
+  
+  // Precios (lista base, pueden variar por cliente)
+  precioBase        Float?
+  moneda            String              @default("ARS")
+  
+  // IVA
+  alicuotaIva       Float               @default(21)      // 21, 10.5, 0
+  
+  // Control
+  activo            Boolean             @default(true)
+  requiereTrazabilidad Boolean          @default(false)   // Si se vincula con media res
+  
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  preciosHistorico  HistoricoPrecioProducto[]
+  preciosCliente    PrecioCliente[]
+  detallesFactura   DetalleFactura[]
+  
+  @@index([categoria])
+  @@index([activo])
+}
+
+enum CategoriaProductoVendible {
+  PRODUCTO_CARNICO      // Medias reses, cuartos, cortes
+  MENUDENCIA            // Menudencias
+  SERVICIO_FAENA        // Servicios de faena
+  SERVICIO_ALMACENAMIENTO // Frío, almacenamiento
+  SERVICIO_PROCESO      // Cuarteo, desposte
+  TRANSPORTE            // Transporte
+  SUBPRODUCTO           // Cueros, rendimientos
+  OTRO                  // Otros
+}
+
+enum TipoVenta {
+  POR_KG          // Se cobra por kilogramo
+  POR_UNIDAD      // Se cobra por unidad fija
+  POR_ANIMAL      // Se cobra por animal faenado
+  POR_HORA        // Servicios por hora
+  FIJO            // Precio fijo por operación
+}
+
+// ==================== HISTÓRICO DE PRECIOS POR PRODUCTO ====================
+
+model HistoricoPrecioProducto {
+  id                  String    @id @default(cuid())
+  productoVendibleId  String
+  productoVendible    ProductoVendible @relation(fields: [productoVendibleId], references: [id])
+  
+  // Precio
+  precioAnterior      Float?
+  precioNuevo         Float
+  moneda              String    @default("ARS")
+  
+  // Motivo del cambio
+  motivo              String?   // "Ajuste mensual", "Inflación", "Contractual"
+  
+  // Vigencia
+  fechaVigencia       DateTime  @default(now())  // Desde cuándo aplica
+  fechaFin            DateTime?                  // Hasta cuándo aplicó (si cambió)
+  
+  // Auditoría
+  operadorId          String?
+  observaciones       String?
+  
+  createdAt           DateTime  @default(now())
+  
+  @@index([productoVendibleId, fechaVigencia])
+}
+
+// ==================== PRECIOS ESPECIALES POR CLIENTE ====================
+
+model PrecioCliente {
+  id                  String    @id @default(cuid())
+  productoVendibleId  String
+  productoVendible    ProductoVendible @relation(fields: [productoVendibleId], references: [id])
+  
+  clienteId           String
+  cliente             Cliente   @relation(fields: [clienteId], references: [id])
+  
+  // Precio especial para este cliente
+  precioEspecial      Float     // Precio acordado con el cliente
+  moneda              String    @default("ARS")
+  
+  // Vigencia del acuerdo
+  fechaDesde          DateTime  @default(now())
+  fechaHasta          DateTime?
+  
+  // Observaciones del acuerdo
+  observaciones       String?   // "Precio acordado contrato anual"
+  
+  activo              Boolean   @default(true)
+  
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  @@unique([productoVendibleId, clienteId])
+  @@index([clienteId])
 }
