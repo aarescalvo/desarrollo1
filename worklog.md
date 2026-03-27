@@ -3359,3 +3359,52 @@ Stage Summary:
 - **Componente rediseñado con tabs** ✅
 - **Pendiente:** db:push en producción
 
+
+---
+## ✅ SINCRONIZACIÓN COMPLETADA - v3.6.0
+
+### Commits Realizados
+- `389c9cc` - v3.6.0 - Modelo de productos completo con 40+ campos según especificaciones
+
+### Push a Repositorios
+| Repositorio | URL | Estado |
+|-------------|-----|--------|
+| desarrollo1 (origin) | https://github.com/aarescalvo/desarrollo1 | ✅ Sincronizado |
+| produccion1 (produccion) | https://github.com/aarescalvo/produccion1 | ✅ Sincronizado |
+
+### Versión Actual: 3.6.0
+
+### Cambios Implementados:
+
+**1. MODELO DE PRODUCTOS (ProductoVendible)**
+- 40+ campos agregados según especificaciones del usuario
+- Organizados en: Datos Básicos, Unidades/Etiquetas, Tipificación, Clasificación, Precios, Logística
+
+**2. API DE PRODUCTOS**
+- GET, POST, PUT actualizados para manejar todos los campos
+- Nuevos filtros: productoGeneral, productoReporteRinde
+
+**3. COMPONENTE DE PRODUCTOS**
+- Interfaz con 5 tabs organizados
+- Formulario completo con todos los campos
+- Botones: Aceptar, Eliminar, Salir
+- Validaciones en tiempo real
+
+### Comandos para actualizar en producción:
+```bash
+cd /ruta/del/proyecto
+git pull origin master
+bun run db:push
+bun run db:generate
+# Reiniciar servidor
+```
+
+### PENDIENTES PARA PRÓXIMA SESIÓN:
+1. Completar módulo de Cortes de Despostada
+2. Implementar control de vencimientos en stock
+3. Implementar exportación PDF de trazabilidad
+4. Sistema FIFO para stock
+5. Editor visual de rótulos
+6. Impresión masiva de rótulos
+7. Auditoría de cambios
+
