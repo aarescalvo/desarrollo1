@@ -188,7 +188,7 @@ async function seedSimulacionCompleta() {
           tipoVenta: 'POR_KG',
           unidadMedida: 'KG',
           precioBase: 3500,
-          precioActual: 3500,
+          precioArs: 3500,
           moneda: 'ARS',
           alicuotaIva: 10.5,
           activo: true
@@ -205,7 +205,7 @@ async function seedSimulacionCompleta() {
           tipoVenta: 'POR_KG',
           unidadMedida: 'KG',
           precioBase: 3200,
-          precioActual: 3200,
+          precioArs: 3200,
           moneda: 'ARS',
           alicuotaIva: 10.5,
           activo: true
@@ -222,7 +222,7 @@ async function seedSimulacionCompleta() {
           tipoVenta: 'POR_KG',
           unidadMedida: 'KG',
           precioBase: 3800,
-          precioActual: 3800,
+          precioArs: 3800,
           moneda: 'ARS',
           alicuotaIva: 10.5,
           activo: true
@@ -236,10 +236,10 @@ async function seedSimulacionCompleta() {
           nombre: 'Servicio Faena Bovino',
           descripcion: 'Servicio de faena para bovinos',
           categoria: 'SERVICIO_FAENA',
-          tipoVenta: 'SERVICIO',
+          tipoVenta: 'FIJO',
           unidadMedida: 'UN',
           precioBase: 15000,
-          precioActual: 15000,
+          precioArs: 15000,
           moneda: 'ARS',
           alicuotaIva: 10.5,
           activo: true
@@ -256,7 +256,7 @@ async function seedSimulacionCompleta() {
           tipoVenta: 'POR_KG',
           unidadMedida: 'KG',
           precioBase: 2500,
-          precioActual: 2500,
+          precioArs: 2500,
           moneda: 'ARS',
           alicuotaIva: 10.5,
           activo: true

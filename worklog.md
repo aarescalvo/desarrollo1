@@ -1172,6 +1172,56 @@ Stage Summary:
 - **Push a ambos repositorios** ✅
 
 ---
+Task ID: 1567
+Agent: main
+Task: Reanudar sesión - Actualizar worklog y corregir error en seed
+
+Work Log:
+
+#### 1. Contexto de Sesión Anterior
+- Versión actual: 3.5.6
+- Commit más reciente: 5d52fc3
+- Ambos repositorios sincronizados (desarrollo1, produccion1)
+
+#### 2. Error Detectado en seed-simulacion-completa.ts
+- **Problema**: Campo `precioActual` no existe en modelo `ProductoVendible`
+- **Campos correctos**: `precioArs`, `precioDolar`, `precioEuro`
+- **Error**: PrismaClientValidationError al ejecutar seed
+
+#### 3. Pendientes Acordados con Usuario
+**EXCLUIDOS:**
+- DTE electrónico (solo registro manual)
+- Integración SENASA (por ahora)
+- Control de temperatura
+
+**INCLUIDOS:**
+- [ ] Crear pantalla de productos con 30+ campos especificados
+- [ ] Módulo de Cortes de Despostada
+- [ ] Control de vencimientos en stock
+- [ ] Sistema FIFO
+- [ ] Exportación PDF trazabilidad
+- [ ] Editor visual de rótulos
+- [ ] Auditoría de cambios
+
+#### 4. Campos para Pantalla de Productos (definidos por usuario)
+- codigo, nombre, tara, vencimiento (días desde fecha faena)
+- numero registro producto senasa, unidad, cantidad etiquetas
+- tiene tipificacion (si/no), tipificacion, tipo, del cuarto
+- descripcion para circular, precio dolar, precio euro, precio ars
+- producido para cliente, producto general, producto reporte rinde
+- tipo de trabajo, idioma etiqueta, temperatura y transporte, tipo de consumo
+- empresa, formato etiqueta, TEXTO para etiqueta
+- 1 tipo trabajo, 2 tipo de carne
+- texto español, texto ingles, texto tercer idioma
+- botones: aceptar, eliminar, salir
+
+Stage Summary:
+- **Worklog actualizado** ✅
+- **Error en seed corregido** ✅ (precioActual → precioArs)
+- **Pendientes documentados** ✅
+- **Versión actualizada a 3.6.1** ✅
+
+---
 Task ID: 1565
 Agent: main
 Task: Reescribir API init-zpl con plantillas completas para Zebra y Datamax
