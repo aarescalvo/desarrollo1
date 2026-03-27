@@ -2926,3 +2926,68 @@ Stage Summary:
 - **Lógica de filtros ajustada** ✅
 - **Versión actualizada a 3.5.3** ✅
 
+
+---
+Task ID: 1572
+Agent: main
+Task: Corrección de errores de build y verificación completa del sistema
+
+Work Log:
+
+#### 1. Error de constante reasignada
+**Archivo:** `src/app/api/precios-sugeridos/route.ts`
+- **Error:** `cannot reassign to a variable declared with 'const'`
+- **Causa:** Se intentaba reasignar `productoVendibleId` que venía de searchParams
+- **Solución:** Creada variable `productoVendibleIdFinal` para almacenar el valor final
+
+#### 2. Módulos faltantes instalados
+```bash
+bun add jsbarcode canvas node-cron
+```
+- **jsbarcode@3.12.3** - Generación de códigos de barras
+- **canvas@3.2.2** - Renderizado de canvas en servidor
+- **node-cron@4.2.1** - Programación de tareas
+
+#### 3. Error con pdfmake
+**Archivo:** `src/app/api/reportes/pdf/route.ts`
+- **Error:** `TypeError: w.default is not a constructor`
+- **Causa:** Import estático de pdfmake no funcionaba correctamente
+- **Solución:** Cambiado a importación dinámica con `await import('pdfmake')`
+
+#### 4. Error de Radix UI SelectItem
+**Archivos afectados:** 10 componentes
+- **Error:** `A <Select.Item /> must have a value prop that is not an empty string`
+- **Causa:** Radix UI no permite `value=""` en SelectItem
+- **Solución:** Cambiado todos los `value=""` por valores especiales:
+  - `value="_TODOS_"` para opciones de "Todos"
+  - `value="_SIN_ASIGNAR_"` para opciones de "Sin asignar"
+  - `value="_SIN_ESPECIFICAR_"` para opciones de "Sin especificar"
+
+#### 5. Archivos corregidos
+| Archivo | Cambios |
+|---------|---------|
+| `precios-sugeridos/route.ts` | Variable const reasignada |
+| `reportes/pdf/route.ts` | Import dinámico pdfmake |
+| `facturacion/index.tsx` | SelectItem vacíos (3 lugares) |
+| `menudencias-tropa/index.tsx` | SelectItem vacío |
+| `configuracion/observaciones-usuario.tsx` | SelectItem vacíos (3 lugares) |
+| `configuracion/stock-insumos.tsx` | SelectItem vacíos (2 lugares) |
+| `config-balanzas/index.tsx` | SelectItem vacío |
+| `configuracion/codigos-articulo.tsx` | SelectItem vacío |
+| `configuracion/subproductos-config.tsx` | SelectItem vacío |
+| `configuracion/terminales.tsx` | SelectItem vacíos (2 lugares) |
+| `config-tipos-producto/index.tsx` | SelectItem vacío |
+| `reportes-avanzados.tsx` | SelectItem vacíos (2 lugares) |
+
+#### 6. Verificación Final
+- **Lint:** Sin errores ✅
+- **Build:** Exitoso ✅
+- **Total APIs detectadas:** 28+ endpoints funcionales
+
+Stage Summary:
+- **4 errores de build corregidos** ✅
+- **12 archivos actualizados** ✅
+- **3 paquetes npm instalados** ✅
+- **Build exitoso** ✅
+- **Versión actualizada a 3.5.4** ✅
+

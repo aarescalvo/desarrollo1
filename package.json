@@ -1,6 +1,6 @@
 {
   "name": "frigorifico-sistema",
-  "version": "3.5.3",
+  "version": "3.5.4",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
@@ -57,6 +57,7 @@
     "@types/pdfmake": "^0.3.2",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
+    "canvas": "^3.2.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -65,6 +66,7 @@
     "exceljs": "^4.4.0",
     "framer-motion": "^12.23.2",
     "input-otp": "^1.4.2",
+    "jsbarcode": "^3.12.3",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "jszip": "^3.10.1",
@@ -73,6 +75,7 @@
     "next-auth": "^4.24.11",
     "next-intl": "^4.3.4",
     "next-themes": "^0.4.6",
+    "node-cron": "^4.2.1",
     "nodemailer": "^8.0.2",
     "pako": "^2.1.0",
     "pdfmake": "^0.3.7",

@@ -17,8 +17,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Si se proporciona código de producto, buscar por código
+    let productoVendibleIdFinal = productoVendibleId
     let producto = null
-    if (codigoProducto && !productoVendibleId) {
+    if (codigoProducto && !productoVendibleIdFinal) {
       producto = await db.productoVendible.findUnique({
         where: { codigo: codigoProducto }
       })
@@ -28,10 +29,10 @@ export async function GET(request: NextRequest) {
           { status: 404 }
         )
       }
-      productoVendibleId = producto.id
+      productoVendibleIdFinal = producto.id
     }
 
-    if (!productoVendibleId) {
+    if (!productoVendibleIdFinal) {
       return NextResponse.json(
         { success: false, error: 'productoVendibleId o codigoProducto es requerido' },
         { status: 400 }
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
     // Si no tenemos el producto, buscarlo
     if (!producto) {
       producto = await db.productoVendible.findUnique({
-        where: { id: productoVendibleId }
+        where: { id: productoVendibleIdFinal }
       })
     }
 
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
     const precioCliente = await db.precioCliente.findFirst({
       where: {
         clienteId,
-        productoVendibleId,
+        productoVendibleId: productoVendibleIdFinal,
         activo: true,
         OR: [
           { fechaHasta: null },
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
     const ultimoPrecioFacturado = await db.detalleFactura.findFirst({
       where: {
         factura: { clienteId },
-        productoVendibleId
+        productoVendibleId: productoVendibleIdFinal
       },
       include: {
         factura: {
@@ -114,7 +115,7 @@ export async function GET(request: NextRequest) {
 
     // PRIORIDAD 3: Precio base del producto (último histórico)
     const ultimoPrecioHistorico = await db.historicoPrecioProducto.findFirst({
-      where: { productoVendibleId },
+      where: { productoVendibleId: productoVendibleIdFinal },
       orderBy: { fechaVigencia: 'desc' }
     })
 

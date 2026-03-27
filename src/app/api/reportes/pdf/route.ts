@@ -1,30 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
-import PdfPrinter from 'pdfmake'
 import { db } from '@/lib/db'
-
-// Definir fuentes
-const fonts = {
-  Roboto: {
-    normal: 'Helvetica',
-    bold: 'Helvetica-Bold',
-    italics: 'Helvetica-Oblique',
-    bolditalics: 'Helvetica-BoldOblique'
-  }
-}
-
-const printer = new PdfPrinter(fonts)
 
 // POST - Exportar reporte PDF
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { tipo, filtros = {} } = body
-    
+
+    // Usar importación dinámica para pdfmake
+    const PdfPrinter = (await import('pdfmake')).default
+
+    // Definir fuentes
+    const fonts = {
+      Roboto: {
+        normal: 'Helvetica',
+        bold: 'Helvetica-Bold',
+        italics: 'Helvetica-Oblique',
+        bolditalics: 'Helvetica-BoldOblique'
+      }
+    }
+
+    const printer = new PdfPrinter(fonts)
+
     const docDefinition = await generarDefinicionPDF(tipo, filtros)
     const pdfDoc = printer.createPdfKitDocument(docDefinition)
-    
+
     const chunks: Buffer[] = []
-    
+
     return new Promise((resolve, reject) => {
       pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk))
       pdfDoc.on('end', () => {
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
       pdfDoc.on('error', reject)
       pdfDoc.end()
     })
-    
+
   } catch (error) {
     console.error('Error al exportar PDF:', error)
     return NextResponse.json(
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function generarDefinicionPDF(tipo: string, filtros: Record<string, any>): Promise<any> {
+async function generarDefinicionPDF(tipo: string, filtros: Record<string, unknown>): Promise<object> {
   // Header común
   const header = {
     columns: [
@@ -70,43 +72,43 @@ async function generarDefinicionPDF(tipo: string, filtros: Record<string, any>):
         ]
       }
     ],
-    margin: [40, 20, 40, 10] as [number, number, number, number]
+    margin: [40, 20, 40, 10]
   }
-  
+
   // Footer común
   const footer = (currentPage: number, pageCount: number) => ({
     text: `Página ${currentPage} de ${pageCount}`,
     alignment: 'center',
     style: 'footer'
   })
-  
+
   // Estilos
   const styles = {
     header: { fontSize: 18, bold: true, color: '#1a365d' },
     subheader: { fontSize: 10, color: '#718096' },
-    title: { fontSize: 14, bold: true, margin: [0, 20, 0, 10] as [number, number, number, number] },
+    title: { fontSize: 14, bold: true, margin: [0, 20, 0, 10] },
     tableHeader: { fontSize: 10, bold: true, fillColor: '#2d3748', color: 'white', alignment: 'center' },
     tableData: { fontSize: 9 },
     footer: { fontSize: 8, color: '#a0aec0' }
   }
-  
+
   // Obtener datos según tipo
   let titulo = ''
-  let tableBody: any[][] = []
-  
+  let tableBody: unknown[][] = []
+
   switch (tipo) {
     case 'tropas':
       titulo = 'Reporte de Tropas'
       const tropas = await db.tropa.findMany({
-        include: { 
+        include: {
           productor: true,
           _count: { select: { animales: true } }
         },
         orderBy: { createdAt: 'desc' },
-        take: filtros.limite || 50
+        take: (filtros.limite as number) || 50
       })
       tableBody = [
-        [{ text: 'Código', style: 'tableHeader' }, { text: 'Productor', style: 'tableHeader' }, 
+        [{ text: 'Código', style: 'tableHeader' }, { text: 'Productor', style: 'tableHeader' },
          { text: 'Cabezas', style: 'tableHeader' }, { text: 'Especie', style: 'tableHeader' },
          { text: 'Estado', style: 'tableHeader' }, { text: 'Fecha', style: 'tableHeader' }],
         ...tropas.map(t => [
@@ -119,10 +121,10 @@ async function generarDefinicionPDF(tipo: string, filtros: Record<string, any>):
         ])
       ]
       break
-      
+
     case 'faena-diaria':
       titulo = 'Reporte de Faena Diaria'
-      const fecha = filtros.fecha || new Date().toISOString().split('T')[0]
+      const fecha = (filtros.fecha as string) || new Date().toISOString().split('T')[0]
       const faenas = await db.romaneo.findMany({
         include: { tropa: { include: { productor: true } } },
         where: {
@@ -146,12 +148,12 @@ async function generarDefinicionPDF(tipo: string, filtros: Record<string, any>):
         ])
       ]
       break
-      
+
     default:
       titulo = 'Reporte'
       tableBody = [[{ text: 'No hay datos', colSpan: 6 }]]
   }
-  
+
   return {
     pageMargins: [40, 80, 40, 60],
     header: () => header,
