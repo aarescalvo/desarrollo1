@@ -2563,3 +2563,58 @@ Stage Summary:
 - **Servidor estable** ✅
 - **Login funcionando** ✅
 - **Versión actual: 3.3.1** ✅
+
+---
+Task ID: 1567
+Agent: main
+Task: Corregir schema.prisma para PostgreSQL y verificar módulo de facturación
+
+Work Log:
+
+#### 1. Problema Identificado
+- El schema.prisma del repositorio de desarrollo tenía SQLite configurado
+- El .env tenía PostgreSQL pero Prisma ignoraba la variable
+- Causa: `url = "file:./dev.db"` hardcodeado en lugar de `url = env("DATABASE_URL")`
+
+#### 2. Corrección Realizada
+**Archivo:** `prisma/schema.prisma`
+```prisma
+# ANTES (incorrecto):
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+# DESPUÉS (correcto):
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+#### 3. Módulo de Facturación Verificado
+**Funcionalidades implementadas:**
+- ✅ Crear facturas
+- ✅ Editar facturas existentes
+- ✅ Pagos parciales (modelo PagoFactura)
+- ✅ Detalle de items/servicios (modelo DetalleFactura)
+- ✅ Histórico de precios (modelo HistoricoPrecio + API)
+- ✅ Trazabilidad con tropa/garrón/mediaRes
+- ✅ Estados: PENDIENTE, EMITIDA, PAGADA, ANULADA
+
+#### 4. Modelos de Facturación Verificados
+- **Factura**: numero, clienteId, fechas, totales, montoPagado, saldoPendiente
+- **DetalleFactura**: tipoProducto, descripcion, cantidad, unidad, precioUnitario, subtotal
+- **PagoFactura**: monto, metodoPago, referencia, observaciones
+- **HistoricoPrecio**: clienteId, tipoProducto, precio, fechaVigencia
+
+#### 5. API de Histórico de Precios
+- GET: Lista precios por cliente/tipoProducto
+- POST: Guarda nuevo precio
+
+Stage Summary:
+- **Schema.prisma corregido a PostgreSQL** ✅
+- **Módulo de facturación completo verificado** ✅
+- **Pagos parciales implementados** ✅
+- **Histórico de precios implementado** ✅
+- **Versión actualizada a 3.3.2** ✅
