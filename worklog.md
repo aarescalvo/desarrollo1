@@ -1112,8 +1112,8 @@ Al terminar CADA sesión de trabajo, verificar:
 - **Minor (0.X.0)**: Nuevas funcionalidades
 - **Patch (0.0.X)**: Bug fixes, mejoras menores
 
-### Versión actual: **3.1.4**
-### Próxima versión sugerida: **3.1.5**
+### Versión actual: **3.4.0**
+### Próxima versión sugerida: **3.4.1**
 
 ---
 Task ID: 1566
@@ -2618,3 +2618,102 @@ Stage Summary:
 - **Pagos parciales implementados** ✅
 - **Histórico de precios implementado** ✅
 - **Versión actualizada a 3.3.2** ✅
+
+---
+Task ID: 1567
+Agent: main
+Task: Sistema de facturación - Modelos ProductoVendible, HistoricoPrecioProducto, PrecioCliente
+
+Work Log:
+
+#### 1. Modelos Agregados a Prisma
+
+**Modelo ProductoVendible:**
+- codigo (único), nombre, descripcion
+- categoria: PRODUCTO_CARNICO, SERVICIO_FAENA, MENUDENCIA, SUBPRODUCTO, OTRO
+- subcategoria, especie (BOVINO, EQUINO)
+- tipoVenta: POR_KG, POR_UNIDAD, SERVICIO
+- unidadMedida, precioBase, moneda, alicuotaIva
+- requiereTrazabilidad, activo
+- Relaciones: preciosHistorico, preciosCliente
+
+**Modelo HistoricoPrecioProducto:**
+- productoVendibleId, precioAnterior, precioNuevo
+- fechaVigencia, moneda, motivo, observaciones
+- Para tracking de cambios de precios en el tiempo
+
+**Modelo PrecioCliente:**
+- productoVendibleId, clienteId
+- precioEspecial, fechaDesde, activo
+- Para precios personalizados por cliente
+
+#### 2. APIs Creadas
+- `/api/productos-vendibles` - CRUD completo con histórico de precios
+- `/api/facturacion/desde-remitos` - Facturación desde despachos/remitos
+- `/api/facturacion/informes` - Informes de facturación
+- `/api/historico-precios-producto` - Histórico de precios
+- `/api/precios-sugeridos` - Sistema de precios sugeridos
+
+#### 3. Funcionalidad "Desde Remitos"
+- GET: Lista despachos pendientes de facturar
+- GET con despachoId: Obtiene detalle con precios sugeridos
+- POST: Crea factura desde remitos seleccionados
+- Sistema de precios sugeridos:
+  1. Precio especial del cliente (PrecioCliente)
+  2. Precio base del producto (precioBase)
+  3. Histórico de precios
+
+#### 4. Documentación Creada
+- `PROPUESTA-MEJORAS-FACTURACION.md` - Propuesta completa
+- `informe-facturacion-frigorificos-argentina.md` - Informe del sector
+
+Stage Summary:
+- **Modelos ProductoVendible, HistoricoPrecioProducto, PrecioCliente creados** ✅
+- **APIs de productos vendibles creada** ✅
+- **API de facturación desde remitos creada** ✅
+- **Sistema de precios sugeridos implementado** ✅
+- **Versión actualizada a 3.4.0** ✅
+- **Commit realizado** ✅
+- **Pendiente: Push a ambos repositorios**
+
+---
+Task ID: 1568
+Agent: main
+Task: Sincronización de repositorios y actualización de versión
+
+Work Log:
+
+#### 1. Estado Previo
+- **Cambios sin commit**: 9 archivos (modelos, APIs, documentos)
+- **Versión anterior**: 3.3.3
+- **Push pendiente**: Ambos repositorios
+
+#### 2. Acciones Realizadas
+1. **Git Add**: Agregados todos los cambios pendientes
+2. **Commit**: `v3.4.0 - Sistema de facturación: modelos ProductoVendible, HistoricoPrecio, PrecioCliente y APIs`
+3. **Versión actualizada**: 3.3.3 → 3.4.0 en package.json
+4. **Worklog actualizado**: Agregado Task ID 1567 con detalles de facturación
+5. **Push a desarrollo**: `git push origin master` → https://github.com/aarescalvo/desarrollo1.git ✅
+6. **Push a producción**: `git push produccion master` → https://github.com/aarescalvo/produccion1.git ✅
+7. **Lint**: Sin errores ✅
+
+#### 3. Repositorios Sincronizados
+| Repositorio | URL | Estado |
+|-------------|-----|--------|
+| desarrollo1 (origin) | https://github.com/aarescalvo/desarrollo1 | ✅ Actualizado |
+| produccion1 (produccion) | https://github.com/aarescalvo/produccion1 | ✅ Actualizado |
+
+#### 4. Commit Realizado
+- **Hash**: b773f50
+- **Archivos modificados**: 9
+- **Líneas agregadas**: +3775
+- **Líneas eliminadas**: -546
+
+Stage Summary:
+- **Commit realizado** ✅
+- **Versión actualizada a 3.4.0** ✅
+- **Worklog actualizado** ✅
+- **Push a desarrollo completado** ✅
+- **Push a producción completado** ✅
+- **Lint sin errores** ✅
+- **Sistema completamente sincronizado** ✅
