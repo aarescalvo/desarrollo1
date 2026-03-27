@@ -1988,6 +1988,12 @@ model RegistroEmpaque {
   loteId          String?
   lote            LoteDespostada?   @relation(fields: [loteId], references: [id])
   
+  // ==================== FIFO Y VENCIMIENTO ====================
+  fechaIngreso      DateTime      @default(now())    // Fecha de ingreso al stock (FIFO)
+  fechaFaena        DateTime?                        // Fecha de faena original
+  diasVencimiento   Int           @default(30)       // Días de vida útil
+  fechaVencimiento  DateTime?                        // Fecha de vencimiento
+  
   // Operador
   operadorId      String?
   operador        Operador?         @relation(fields: [operadorId], references: [id])
@@ -2004,6 +2010,8 @@ model RegistroEmpaque {
   @@index([producto])
   @@index([estado])
   @@index([fecha])
+  @@index([fechaIngreso])
+  @@index([fechaVencimiento])
 }
 
 enum EstadoEmpaque {

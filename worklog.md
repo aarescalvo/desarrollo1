@@ -1267,6 +1267,57 @@ Stage Summary:
 - **Pantalla de productos verificada (ya completa)** ✅
 
 ---
+Task ID: 1569
+Agent: main
+Task: Implementar Sistema FIFO y Exportación PDF Trazabilidad
+
+Work Log:
+
+#### 1. Sistema FIFO Implementado
+**Schema actualizado:**
+- `RegistroEmpaque` agregado campos:
+  - `fechaIngreso` - Para ordenamiento FIFO
+  - `fechaFaena` - Fecha de origen
+  - `diasVencimiento` - Vida útil en días
+  - `fechaVencimiento` - Fecha calculada
+
+**API FIFO creada:** `src/app/api/fifo/route.ts`
+- GET: Lista productos ordenados por FIFO
+  - Primero por fecha de vencimiento
+  - Luego por fecha de ingreso
+  - Calcula prioridad (CRITICO, ALTA, MEDIA, BAJA)
+  - Estadísticas de peso y cantidad
+- POST: Registra despacho según FIFO
+
+**Componente FIFO creado:** `src/components/fifo-stock/index.tsx`
+- Dashboard con estadísticas visuales
+- Selección múltiple de productos
+- Botones para seleccionar críticos/alta prioridad
+- Indicadores de días en stock y días restantes
+- Acción de despacho masivo
+
+#### 2. Exportación PDF Trazabilidad
+**API creada:** `src/app/api/trazabilidad-pdf/route.ts`
+- POST: Genera PDF completo de trazabilidad
+  - Datos de la media res
+  - Datos del romaneo
+  - Movimientos de cámara
+  - Despachos asociados
+- GET: Lista medias reses disponibles
+
+#### 3. Características del Sistema
+- **FIFO**: Sugiere productos más antiguos primero
+- **Alertas visuales**: Rojo=vencido, Ámbar=próximo a vencer
+- **Cálculo automático**: Días en stock, días restantes
+- **PDF profesional**: Formato estructurado con jspdf-autotable
+
+Stage Summary:
+- **Sistema FIFO completo** ✅
+- **Exportación PDF trazabilidad** ✅
+- **Schema extendido con campos FIFO** ✅
+- **DB sincronizada** ✅
+
+---
 Task ID: 1565
 Agent: main
 Task: Reescribir API init-zpl con plantillas completas para Zebra y Datamax
