@@ -2856,3 +2856,32 @@ Stage Summary:
 - **Nuevas hojas para módulo de facturación** ✅
 - **Versión actualizada a 3.5.1** ✅
 
+
+---
+Task ID: 1570
+Agent: main
+Task: Fix error de build - Icono PriceTag no existe en lucide-react
+
+Work Log:
+
+#### 1. Error Detectado
+- **Error**: `Export PriceTag doesn't exist in target module`
+- **Archivo**: `src/components/facturacion/index.tsx`
+- **Causa**: El ícono `PriceTag` no existe en la librería lucide-react
+
+#### 2. Solución Aplicada
+- Reemplazado `PriceTag` por `Tag` (ícono existente en lucide-react)
+- Cambios en 3 ubicaciones:
+  - Import statement
+  - TabsTrigger "preciosCliente"
+  - CardTitle en la sección de precios
+
+#### 3. Verificación
+- **Lint**: Sin errores ✅
+- **Build**: Verificado ✅
+
+Stage Summary:
+- **Error de build corregido** ✅
+- **Versión actualizada a 3.5.2** ✅
+- **Push a ambos repositorios** ✅
+
