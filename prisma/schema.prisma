@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // ==================== CONFIGURACIÓN FRIGORÍFICO ====================
@@ -1070,6 +1070,8 @@ model Factura {
   subtotal          Float         @default(0)
   iva               Float         @default(0)
   total             Float         @default(0)
+  montoPagado       Float         @default(0)   // Total de pagos realizados
+  saldoPendiente    Float         @default(0)   // Total - montoPagado
   
   // Estado
   estado            EstadoFactura @default(PENDIENTE)
@@ -1089,6 +1091,7 @@ model Factura {
   updatedAt         DateTime      @updatedAt
   
   detalles          DetalleFactura[]
+  pagos             PagoFactura[]
   
   @@index([numero])
   @@index([clienteId])
@@ -2325,4 +2328,115 @@ model PlantillaReporte {
   
   @@index([categoria])
   @@index([activo])
+}
+
+// ==================== PAGOS DE FACTURAS (Pagos Parciales) ====================
+
+model PagoFactura {
+  id                String        @id @default(cuid())
+  facturaId         String
+  factura           Factura       @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  
+  // Datos del pago
+  fecha             DateTime      @default(now())
+  monto             Float         @default(0)
+  
+  // Método de pago
+  metodoPago        MetodoPago    @default(EFECTIVO)
+  
+  // Referencia (número de cheque, transferencia, etc.)
+  referencia        String?
+  
+  // Observaciones
+  observaciones     String?
+  
+  // Operador que registró
+  operadorId        String?
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  @@index([facturaId])
+  @@index([fecha])
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  CHEQUE
+  TARJETA_DEBITO
+  TARJETA_CREDITO
+  OTRO
+}
+
+// ==================== HISTÓRICO DE PRECIOS ====================
+
+model HistoricoPrecio {
+  id                String        @id @default(cuid())
+  
+  // Cliente (opcional, si es precio general no tiene cliente)
+  clienteId         String?
+  
+  // Tipo de producto
+  tipoProducto      TipoProductoFactura
+  
+  // Precio
+  precio            Float         @default(0)
+  
+  // Fecha de vigencia
+  fechaVigencia     DateTime      @default(now())
+  
+  // Observaciones
+  observaciones     String?
+  
+  // Usuario que registró
+  registradoPor     String?
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  @@index([clienteId])
+  @@index([tipoProducto])
+  @@index([fechaVigencia])
+}
+
+// ==================== SERVICIOS DE FAENA ====================
+
+model ServicioFaena {
+  id                String        @id @default(cuid())
+  nombre            String        // "Faena Bovino", "Despostada", etc.
+  codigo            String?       @unique
+  
+  // Descripción
+  descripcion       String?
+  
+  // Costos
+  costoBase         Float         @default(0)     // Costo base por unidad
+  costoPorKg        Float         @default(0)     // Costo por KG
+  costoPorCabeza    Float         @default(0)     // Costo por cabeza
+  
+  // Costos adicionales
+  costoDespostada   Float         @default(0)     // Costo adicional despostada
+  costoEmbalaje     Float         @default(0)     // Costo de embalaje
+  
+  // Recuperos (valores que se descuentan)
+  recuperoCuero     Float         @default(0)     // Valor del cuero
+  recuperoMenudencia Float        @default(0)     // Valor de menudencias
+  recuperoGrasa     Float         @default(0)     // Valor de la grasa
+  recuperoHueso     Float         @default(0)     // Valor del hueso
+  
+  // Especie
+  especie           Especie       @default(BOVINO)
+  
+  // Estado
+  activo            Boolean       @default(true)
+  
+  // Observaciones
+  observaciones     String?
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  @@index([activo])
+  @@index([especie])
 }

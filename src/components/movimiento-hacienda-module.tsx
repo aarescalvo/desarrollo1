@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { 
   Beef, Warehouse, Skull, Move, RefreshCw,
   X, ArrowRight
@@ -296,42 +296,6 @@ export function MovimientoHaciendaModule({ operador }: { operador: Operador }) {
   const totalEnCorrales = corrales.reduce((acc, c) => acc + c.stockTotal, 0)
   const corralesOcupados = corrales.filter(c => c.stockTotal > 0).length
 
-  // Resumen global de tropas (total por tropa en todos los corrales)
-  const resumenTropas = useMemo(() => {
-    const tropasMap = new Map<string, {
-      tropaId: string
-      tropaCodigo: string
-      especie: string
-      usuarioFaena: string
-      totalAnimales: number
-      corrales: { corralId: string; corralNombre: string; cantidad: number }[]
-    }>()
-    
-    for (const corral of corrales) {
-      for (const tropa of corral.tropas) {
-        if (!tropasMap.has(tropa.tropaId)) {
-          tropasMap.set(tropa.tropaId, {
-            tropaId: tropa.tropaId,
-            tropaCodigo: tropa.tropaCodigo,
-            especie: tropa.especie,
-            usuarioFaena: tropa.usuarioFaena,
-            totalAnimales: 0,
-            corrales: []
-          })
-        }
-        const tropaData = tropasMap.get(tropa.tropaId)!
-        tropaData.totalAnimales += tropa.cantidad
-        tropaData.corrales.push({
-          corralId: corral.id,
-          corralNombre: corral.nombre,
-          cantidad: tropa.cantidad
-        })
-      }
-    }
-    
-    return Array.from(tropasMap.values()).sort((a, b) => a.tropaCodigo.localeCompare(b.tropaCodigo))
-  }, [corrales])
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -357,53 +321,6 @@ export function MovimientoHaciendaModule({ operador }: { operador: Operador }) {
               </Badge>
             </div>
           </div>
-        </EditableBlock>
-
-        {/* Resumen Global de Tropas */}
-        <EditableBlock bloqueId="resumenTropas" label="Resumen por Tropa">
-          <Card className="border-0 shadow-md">
-            <CardHeader className="bg-stone-50 rounded-t-lg pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Beef className="w-5 h-5 text-amber-500" />
-                <TextoEditable id="titulo-resumen-tropas" original="Resumen por Tropa" tag="span" />
-              </CardTitle>
-              <p className="text-sm text-stone-500">
-                {resumenTropas.length} <TextoEditable id="label-tropas-activas" original="tropas activas en corrales" tag="span" />
-              </p>
-            </CardHeader>
-            <CardContent className="p-0">
-              {resumenTropas.length === 0 ? (
-                <div className="p-8 text-center text-stone-400">
-                  <Beef className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p><TextoEditable id="msg-sin-tropas" original="No hay tropas en corrales" tag="span" /></p>
-                </div>
-              ) : (
-                <div className="divide-y max-h-64 overflow-y-auto">
-                  {resumenTropas.map((tropa) => (
-                    <div key={tropa.tropaId} className="p-3 hover:bg-stone-50">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <span className="font-mono font-bold text-stone-800">{tropa.tropaCodigo}</span>
-                          <span className="text-xs text-stone-400 ml-2">({tropa.especie === 'BOVINO' ? 'Bovino' : 'Equino'})</span>
-                        </div>
-                        <Badge className="bg-amber-500 text-white">
-                          {tropa.totalAnimales} <TextoEditable id="label-anim-short3" original="anim." tag="span" />
-                        </Badge>
-                      </div>
-                      <div className="text-xs text-stone-500 mb-2">{tropa.usuarioFaena}</div>
-                      <div className="flex flex-wrap gap-1">
-                        {tropa.corrales.map((c) => (
-                          <Badge key={c.corralId} variant="outline" className="text-xs">
-                            {c.corralNombre}: {c.cantidad}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </EditableBlock>
 
         {/* Layout principal */}

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 
-// GET - Fetch facturas
+// GET - Listar facturas con filtros
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -10,62 +11,62 @@ export async function GET(request: NextRequest) {
     const desde = searchParams.get('desde')
     const hasta = searchParams.get('hasta')
     const search = searchParams.get('search')
-    
-    let where: any = {}
-    
+
+    const where: Prisma.FacturaWhereInput = {}
+
     if (estado && estado !== 'TODOS') {
-      where.estado = estado
+      where.estado = estado as 'PENDIENTE' | 'EMITIDA' | 'PAGADA' | 'ANULADA'
     }
-    
+
     if (clienteId) {
       where.clienteId = clienteId
     }
-    
+
     if (desde || hasta) {
       where.fecha = {}
-      if (desde) {
-        where.fecha.gte = new Date(desde)
-      }
-      if (hasta) {
-        where.fecha.lte = new Date(hasta + 'T23:59:59')
-      }
+      if (desde) where.fecha.gte = new Date(desde)
+      if (hasta) where.fecha.lte = new Date(hasta)
     }
-    
+
     if (search) {
       where.OR = [
-        { numero: { contains: search } },
-        { cliente: { nombre: { contains: search } } },
-        { remito: { contains: search } }
+        { numero: { contains: search, mode: 'insensitive' } },
+        { cliente: { nombre: { contains: search, mode: 'insensitive' } } }
       ]
     }
-    
+
     const facturas = await db.factura.findMany({
       where,
       include: {
-        cliente: {
-          select: {
-            id: true,
-            nombre: true,
-            cuit: true,
-            direccion: true
-          }
-        },
-        detalles: {
-          orderBy: { createdAt: 'asc' }
-        },
-        operador: {
-          select: {
-            id: true,
-            nombre: true
-          }
+        cliente: true,
+        detalles: true,
+        pagos: {
+          orderBy: { fecha: 'desc' }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { fecha: 'desc' }
     })
-    
+
+    // Calcular totales
+    const stats = {
+      total: facturas.length,
+      pendientes: facturas.filter(f => f.estado === 'PENDIENTE').length,
+      pagadas: facturas.filter(f => f.estado === 'PAGADA').length,
+      montoTotal: facturas
+        .filter(f => f.estado !== 'ANULADA')
+        .reduce((sum, f) => sum + f.total.toNumber(), 0),
+      saldoPendiente: facturas
+        .filter(f => f.estado === 'PENDIENTE')
+        .reduce((sum, f) => {
+          const pagado = f.pagos.reduce((s, p) => s + p.monto.toNumber(), 0)
+          return sum + (f.total.toNumber() - pagado)
+        }, 0)
+    }
+
     return NextResponse.json({
       success: true,
-      data: facturas
+      data: facturas,
+      stats
     })
   } catch (error) {
     console.error('Error fetching facturas:', error)
@@ -76,97 +77,115 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new factura
+// POST - Crear factura con detalles
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { 
-      clienteId, 
-      fecha,
-      detalles,
-      observaciones,
+    const {
+      clienteId,
       condicionVenta,
       remito,
-      operadorId 
+      observaciones,
+      detalles,
+      operadorId
     } = body
-    
-    if (!clienteId) {
+
+    if (!clienteId || !detalles || detalles.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'El cliente es requerido' },
+        { success: false, error: 'Cliente y detalles son requeridos' },
         { status: 400 }
       )
     }
-    
-    if (!detalles || detalles.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Debe agregar al menos un detalle' },
-        { status: 400 }
-      )
-    }
-    
-    // Obtener el último número de factura
-    const numerador = await db.numerador.upsert({
-      where: { nombre: 'FACTURA' },
-      update: { ultimoNumero: { increment: 1 } },
-      create: { nombre: 'FACTURA', ultimoNumero: 1 }
+
+    // Obtener ultimo numero de factura
+    const ultimaFactura = await db.factura.findFirst({
+      orderBy: { numeroInterno: 'desc' }
     })
-    
-    const numeroInterno = numerador.ultimoNumero
-    const numero = String(numeroInterno).padStart(8, '0')
-    
+    const numeroInterno = (ultimaFactura?.numeroInterno || 0) + 1
+    const numero = `0001-${String(numeroInterno).padStart(8, '0')}`
+
     // Calcular totales
     let subtotal = 0
-    const detallesCalculados = detalles.map((d: any) => {
-      const subtotalDetalle = Number(d.cantidad) * Number(d.precioUnitario)
-      subtotal += subtotalDetalle
-      return {
-        ...d,
-        subtotal: subtotalDetalle
-      }
-    })
-    
+    for (const det of detalles) {
+      subtotal += det.cantidad * det.precioUnitario
+    }
     const iva = subtotal * 0.21 // IVA 21%
     const total = subtotal + iva
-    
-    // Crear la factura con sus detalles
+
+    // Crear factura con detalles
     const factura = await db.factura.create({
       data: {
         numero,
         numeroInterno,
         clienteId,
-        fecha: fecha ? new Date(fecha) : new Date(),
+        fecha: new Date(),
         subtotal,
         iva,
         total,
-        observaciones: observaciones || null,
-        condicionVenta: condicionVenta || null,
-        remito: remito || null,
-        operadorId: operadorId || null,
+        estado: 'PENDIENTE',
+        condicionVenta,
+        remito,
+        observaciones,
+        operadorId,
         detalles: {
-          create: detallesCalculados.map((d: any) => ({
-            tipoProducto: d.tipoProducto,
-            descripcion: d.descripcion,
-            cantidad: Number(d.cantidad),
-            unidad: d.unidad || 'KG',
-            precioUnitario: Number(d.precioUnitario),
-            subtotal: d.subtotal,
-            tropaCodigo: d.tropaCodigo || null,
-            garron: d.garron || null,
-            mediaResId: d.mediaResId || null,
-            pesoKg: d.pesoKg ? Number(d.pesoKg) : null
+          create: detalles.map((det: {
+            tipoProducto: string
+            descripcion: string
+            cantidad: number
+            unidad: string
+            precioUnitario: number
+            subtotal: number
+            tropaCodigo?: string
+            garron?: number
+            mediaResId?: string
+            pesoKg?: number
+          }) => ({
+            tipoProducto: det.tipoProducto,
+            descripcion: det.descripcion,
+            cantidad: det.cantidad,
+            unidad: det.unidad || 'KG',
+            precioUnitario: det.precioUnitario,
+            subtotal: det.cantidad * det.precioUnitario,
+            tropaCodigo: det.tropaCodigo,
+            garron: det.garron,
+            mediaResId: det.mediaResId,
+            pesoKg: det.pesoKg
           }))
         }
       },
       include: {
         cliente: true,
-        detalles: true,
-        operador: true
+        detalles: true
       }
     })
-    
+
+    // Guardar historico de precios
+    for (const det of detalles) {
+      if (det.descripcion && det.precioUnitario > 0) {
+        await db.historicoPrecio.upsert({
+          where: {
+            clienteId_producto: {
+              clienteId,
+              producto: det.descripcion
+            }
+          },
+          create: {
+            clienteId,
+            producto: det.descripcion,
+            precio: det.precioUnitario
+          },
+          update: {
+            precio: det.precioUnitario,
+            fecha: new Date()
+          }
+        })
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      data: factura
+      data: factura,
+      message: `Factura ${numero} creada exitosamente`
     })
   } catch (error) {
     console.error('Error creating factura:', error)
