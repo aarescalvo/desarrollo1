@@ -99,7 +99,7 @@ export async function POST(
       data: {
         facturaId: id,
         monto,
-        formaPago: formaPago || 'EFECTIVO',
+        metodoPago: formaPago || 'EFECTIVO',
         referencia,
         observaciones,
         operadorId,

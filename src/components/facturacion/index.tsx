@@ -27,7 +27,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from 'recharts'
 
 interface Operador { id: string; nombre: string; rol: string }
 
@@ -722,11 +722,16 @@ export function FacturacionModule({ operador }: Props) {
 
   const handleEditar = (factura: Factura) => {
     setFacturaSeleccionada(factura)
+    // Calcular tipoIva desde los valores de la factura
+    const tipoIvaCalculado = factura.subtotal > 0 
+      ? Math.round((factura.iva / factura.subtotal) * 100) 
+      : 21
     setFormData({
       clienteId: factura.clienteId,
       condicionVenta: factura.condicionVenta || 'CONTADO',
       remito: factura.remito || '',
       observaciones: factura.observaciones || '',
+      tipoIva: tipoIvaCalculado,
       detalles: factura.detalles.length > 0 ? factura.detalles : [
         { tipoProducto: 'OTRO', descripcion: '', cantidad: 1, unidad: 'KG', precioUnitario: 0, precioConfirmado: false, subtotal: 0 }
       ]
@@ -1456,33 +1461,36 @@ export function FacturacionModule({ operador }: Props) {
 
                 {/* Gráfico */}
                 {datosGrafico.length > 0 ? (
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      {tipoGrafico === 'porCliente' ? (
-                        <BarChart data={datosGrafico.slice(0, 10)} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                          <XAxis dataKey="clienteNombre" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
-                          <YAxis tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Bar dataKey="total" fill="#FF6B35" name="Total Facturado" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      ) : (
-                        <AreaChart data={datosGrafico} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                          <defs>
-                            <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#FF6B35" stopOpacity={0.1}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                          <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                          <YAxis tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Area type="monotone" dataKey="total" stroke="#FF6B35" fillOpacity={1} fill="url(#colorTotal)" name="Total Facturado" />
-                        </AreaChart>
-                      )}
-                    </ResponsiveContainer>
-                  </div>
+                  <ChartContainer 
+                    config={{
+                      total: { label: "Total", color: "#FF6B35" }
+                    }} 
+                    className="h-80"
+                  >
+                    {tipoGrafico === 'porCliente' ? (
+                      <BarChart data={datosGrafico.slice(0, 10)} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                        <XAxis dataKey="clienteNombre" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
+                        <YAxis tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="total" fill="#FF6B35" name="Total Facturado" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    ) : (
+                      <AreaChart data={datosGrafico} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                        <defs>
+                          <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#FF6B35" stopOpacity={0.1}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                        <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                        <YAxis tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Area type="monotone" dataKey="total" stroke="#FF6B35" fillOpacity={1} fill="url(#colorTotal)" name="Total Facturado" />
+                      </AreaChart>
+                    )}
+                  </ChartContainer>
                 ) : (
                   <div className="h-80 flex items-center justify-center text-stone-400">
                     <div className="text-center">

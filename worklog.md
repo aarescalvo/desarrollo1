@@ -3735,3 +3735,54 @@ Stage Summary:
 - **Limpieza al cargar la aplicación** ✅
 - **Cleanup en módulo de despachos** ✅
 - **Versión actualizada a 3.7.2** ✅
+
+---
+Task ID: 1570
+Agent: main
+Task: Corregir errores en facturación - IVA y gráficos
+
+Work Log:
+
+#### 1. Problema del IVA al 0%
+- **Síntoma**: Al editar factura y cambiar IVA a 0%, seguía calculando 21%
+- **Causa**: En `handleEditar()` no se copiaba `tipoIva` de la factura al formData
+- **Solución**: Calcular `tipoIva` desde los valores de la factura:
+  ```typescript
+  const tipoIvaCalculado = factura.subtotal > 0 
+    ? Math.round((factura.iva / factura.subtotal) * 100) 
+    : 21
+  ```
+
+#### 2. Error en Gráficos de Informes
+- **Síntoma**: `useChart must be used within a <ChartContainer />`
+- **Causa**: `ChartTooltipContent` se usaba fuera de `ChartContainer`
+- **Solución**: Envolver gráficos con `ChartContainer`:
+  ```tsx
+  <ChartContainer config={{ total: { label: "Total", color: "#FF6B35" } }} className="h-80">
+    <BarChart ...>
+      <ChartTooltip content={<ChartTooltipContent />} />
+    </BarChart>
+  </ChartContainer>
+  ```
+
+#### 3. Error al Registrar Pagos
+- **Síntoma**: Error al crear pago en facturación
+- **Causa**: Campo incorrecto - API usaba `formaPago` pero Prisma modelo es `metodoPago`
+- **Solución**: Corregir en API `/api/facturacion/[id]/pagos/route.ts`:
+  ```typescript
+  metodoPago: formaPago || 'EFECTIVO'  // era: formaPago: formaPago
+  ```
+
+#### 4. Archivos Modificados
+1. `src/components/facturacion/index.tsx`
+   - `handleEditar()`: Agregado cálculo de `tipoIva`
+   - Gráficos: Agregado `ChartContainer` wrapper
+
+2. `src/app/api/facturacion/[id]/pagos/route.ts`
+   - Corregido campo `formaPago` → `metodoPago`
+
+Stage Summary:
+- **IVA al 0% corregido** ✅
+- **Error de ChartContainer corregido** ✅
+- **Error al registrar pagos corregido** ✅
+- **Versión actualizada a 3.7.3** ✅
