@@ -1,188 +1,317 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-// GET - Obtener sugerencias FIFO para despacho
+// GET - Obtener stock ordenado por FIFO (First In, First Out)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const producto = searchParams.get('producto')
+    const clienteId = searchParams.get('clienteId')
     const camaraId = searchParams.get('camaraId')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const diasVencimiento = parseInt(searchParams.get('diasVencimiento') || '30')
+    const incluirAlertas = searchParams.get('alertas') === 'true'
 
-    // Construir filtro base - solo productos pendientes o empacados
-    const where: any = {
-      estado: { in: ['PENDIENTE', 'EMPACADO'] }
+    // Construir filtros para medias reses
+    const whereMedia: Record<string, unknown> = { estado: 'EN_CAMARA' }
+    if (camaraId) whereMedia.camaraId = camaraId
+
+    // Si hay cliente, filtrar por usuario faena
+    let tropasDelCliente: string[] = []
+    if (clienteId) {
+      const tropas = await db.tropa.findMany({
+        where: { usuarioFaenaId: clienteId },
+        select: { codigo: true }
+      })
+      tropasDelCliente = tropas.map(t => t.codigo)
     }
 
-    if (producto) {
-      where.producto = { contains: producto, mode: 'insensitive' }
-    }
-
-    if (camaraId) {
-      where.camaraId = camaraId
-    }
-
-    // Obtener productos ordenados por fecha de ingreso (FIFO)
-    const productosFIFO = await db.registroEmpaque.findMany({
-      where,
-      include: {
-        camara: true,
-        lote: {
-          include: {
-            ingresos: {
-              include: {
-                camaraOrigen: true
-              }
-            }
-          }
-        }
+    // Obtener medias reses ordenadas por fecha de faena (más antiguas primero)
+    const mediasRes = await db.mediaRes.findMany({
+      where: {
+        ...whereMedia,
+        ...(tropasDelCliente.length > 0 ? { 
+          romaneo: { tropaCodigo: { in: tropasDelCliente } } 
+        } : {})
       },
-      orderBy: [
-        { fechaVencimiento: 'asc' },  // Primero los que vencen antes
-        { fechaIngreso: 'asc' }        // Luego por fecha de ingreso (FIFO)
-      ],
-      take: limit
+      include: {
+        romaneo: {
+          select: {
+            garron: true,
+            tropaCodigo: true,
+            fecha: true,
+            tipoAnimal: true,
+            pesoVivo: true
+          }
+        },
+        camara: { select: { id: true, nombre: true } }
+      },
+      orderBy: {
+        fechaFaena: 'asc' // FIFO: más antiguos primero
+      }
     })
 
-    // Calcular días en stock y estado FIFO
     const hoy = new Date()
-    const productosConAnalisis = productosFIFO.map(p => {
-      const fechaVenc = p.fechaVencimiento ? new Date(p.fechaVencimiento) : null
-      const fechaIngreso = new Date(p.fechaIngreso)
+    const alertas: Array<{
+      tipo: 'CRITICO' | 'URGENTE' | 'PROXIMO'
+      diasRestantes: number
+      mediaRes: typeof mediasRes[0]
+    }> = []
+
+    // Procesar cada media res y calcular días en cámara
+    const stockFIFO = mediasRes.map(media => {
+      const fechaFaena = media.fechaFaena || media.romaneo.fecha
+      const diasEnCamara = Math.floor((hoy.getTime() - new Date(fechaFaena).getTime()) / (1000 * 60 * 60 * 24))
+      const diasRestantes = (media.diasVencimiento || diasVencimiento) - diasEnCamara
       
-      const diasEnStock = Math.floor((hoy.getTime() - fechaIngreso.getTime()) / (1000 * 60 * 60 * 24))
-      const diasRestantes = fechaVenc 
-        ? Math.ceil((fechaVenc.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
-        : null
+      // Calcular estado de vencimiento
+      let estadoVencimiento: 'OK' | 'PROXIMO' | 'URGENTE' | 'CRITICO' = 'OK'
+      if (diasRestantes <= 0) {
+        estadoVencimiento = 'CRITICO'
+      } else if (diasRestantes <= 3) {
+        estadoVencimiento = 'URGENTE'
+      } else if (diasRestantes <= 7) {
+        estadoVencimiento = 'PROXIMO'
+      }
 
-      // Determinar prioridad FIFO
-      let prioridadFIFO: 'CRITICO' | 'ALTA' | 'MEDIA' | 'BAJA' = 'BAJA'
-      let razon = ''
-
-      if (diasRestantes !== null && diasRestantes < 0) {
-        prioridadFIFO = 'CRITICO'
-        razon = 'Producto vencido'
-      } else if (diasRestantes !== null && diasRestantes <= 3) {
-        prioridadFIFO = 'CRITICO'
-        razon = `Vence en ${diasRestantes} días`
-      } else if (diasRestantes !== null && diasRestantes <= 7) {
-        prioridadFIFO = 'ALTA'
-        razon = `Vence en ${diasRestantes} días`
-      } else if (diasEnStock > 14) {
-        prioridadFIFO = 'ALTA'
-        razon = `${diasEnStock} días en stock`
-      } else if (diasEnStock > 7) {
-        prioridadFIFO = 'MEDIA'
-        razon = `${diasEnStock} días en stock`
-      } else {
-        prioridadFIFO = 'BAJA'
-        razon = 'Producto fresco'
+      // Agregar a alertas si corresponde
+      if (incluirAlertas && (estadoVencimiento === 'CRITICO' || estadoVencimiento === 'URGENTE' || estadoVencimiento === 'PROXIMO')) {
+        alertas.push({
+          tipo: estadoVencimiento,
+          diasRestantes,
+          media
+        })
       }
 
       return {
-        ...p,
-        diasEnStock,
+        id: media.id,
+        codigo: media.codigo,
+        lado: media.lado,
+        sigla: media.sigla,
+        peso: media.peso,
+        camara: media.camara,
+        tropaCodigo: media.romaneo.tropaCodigo,
+        garron: media.romaneo.garron,
+        tipoAnimal: media.romaneo.tipoAnimal,
+        fechaFaena,
+        diasEnCamara,
+        diasVencimiento: media.diasVencimiento || diasVencimiento,
         diasRestantes,
-        prioridadFIFO,
-        razonFIFO: razon
+        fechaVencimiento: media.fechaVencimiento,
+        estadoVencimiento,
+        prioridadFIFO: diasEnCamara // Mayor prioridad = más antiguo
       }
     })
 
-    // Agrupar por producto para resumen
-    const resumenPorProducto = productosConAnalisis.reduce((acc, p) => {
-      const key = p.producto
-      if (!acc[key]) {
-        acc[key] = {
-          producto: p.producto,
-          totalUnidades: 0,
-          totalKg: 0,
-          critico: 0,
-          alta: 0,
-          media: 0,
-          baja: 0,
-          kgCritico: 0
-        }
-      }
-      
-      acc[key].totalUnidades += p.cantidad
-      acc[key].totalKg += p.pesoKg * p.cantidad
-      
-      if (p.prioridadFIFO === 'CRITICO') {
-        acc[key].critico++
-        acc[key].kgCritico += p.pesoKg * p.cantidad
-      }
-      if (p.prioridadFIFO === 'ALTA') acc[key].alta++
-      if (p.prioridadFIFO === 'MEDIA') acc[key].media++
-      if (p.prioridadFIFO === 'BAJA') acc[key].baja++
-      
-      return acc
-    }, {} as Record<string, any>)
+    // Ordenar por prioridad FIFO (más antiguos primero)
+    stockFIFO.sort((a, b) => b.prioridadFIFO - a.prioridadFIFO)
 
-    // Estadísticas generales
-    const stats = {
-      totalProductos: productosConAnalisis.length,
-      totalKg: productosConAnalisis.reduce((sum, p) => sum + p.pesoKg * p.cantidad, 0),
-      criticos: productosConAnalisis.filter(p => p.prioridadFIFO === 'CRITICO').length,
-      kgCriticos: productosConAnalisis
-        .filter(p => p.prioridadFIFO === 'CRITICO')
-        .reduce((sum, p) => sum + p.pesoKg * p.cantidad, 0),
-      altaPrioridad: productosConAnalisis.filter(p => p.prioridadFIFO === 'ALTA').length,
-      productosSinVencimiento: productosConAnalisis.filter(p => !p.fechaVencimiento).length
-    }
+    // Agrupar por cámara para resumen
+    const resumenPorCamara = new Map<string, {
+      camaraId: string
+      camaraNombre: string
+      totalMedias: number
+      totalKg: number
+      criticos: number
+      urgentes: number
+      proximos: number
+      ok: number
+    }>()
+
+    stockFIFO.forEach(item => {
+      const camaraId = item.camara?.id || 'sin-camara'
+      const camaraNombre = item.camara?.nombre || 'Sin cámara'
+      
+      const existing = resumenPorCamara.get(camaraId)
+      if (existing) {
+        existing.totalMedias++
+        existing.totalKg += item.peso
+        if (item.estadoVencimiento === 'CRITICO') existing.criticos++
+        else if (item.estadoVencimiento === 'URGENTE') existing.urgentes++
+        else if (item.estadoVencimiento === 'PROXIMO') existing.proximos++
+        else existing.ok++
+      } else {
+        resumenPorCamara.set(camaraId, {
+          camaraId,
+          camaraNombre,
+          totalMedias: 1,
+          totalKg: item.peso,
+          criticos: item.estadoVencimiento === 'CRITICO' ? 1 : 0,
+          urgentes: item.estadoVencimiento === 'URGENTE' ? 1 : 0,
+          proximos: item.estadoVencimiento === 'PROXIMO' ? 1 : 0,
+          ok: item.estadoVencimiento === 'OK' ? 1 : 0
+        })
+      }
+    })
+
+    // Calcular sugerencias de despacho FIFO
+    const sugerenciasDespacho: Array<{
+      camaraId: string
+      camaraNombre: string
+      medias: Array<{
+        id: string
+        codigo: string
+        tropaCodigo: string | null
+        garron: number | null
+        peso: number
+        diasEnCamara: number
+        diasRestantes: number
+        estadoVencimiento: string
+      }>
+      totalKg: number
+      prioridad: number // Mayor = más urgente despachar
+    }> = []
+
+    // Agrupar sugerencias por cámara
+    const mediasPorCamara = new Map<string, typeof stockFIFO>()
+    stockFIFO.forEach(item => {
+      const camaraId = item.camara?.id || 'sin-camara'
+      if (!mediasPorCamara.has(camaraId)) {
+        mediasPorCamara.set(camaraId, [])
+      }
+      mediasPorCamara.get(camaraId)!.push(item)
+    })
+
+    // Crear sugerencias ordenadas por urgencia
+    mediasPorCamara.forEach((medias, camaraId) => {
+      const criticosCount = medias.filter(m => m.estadoVencimiento === 'CRITICO').length
+      const urgentesCount = medias.filter(m => m.estadoVencimiento === 'URGENTE').length
+      const totalKg = medias.reduce((acc, m) => acc + m.peso, 0)
+      
+      sugerenciasDespacho.push({
+        camaraId,
+        camaraNombre: medias[0]?.camara?.nombre || 'Sin cámara',
+        medias: medias.map(m => ({
+          id: m.id,
+          codigo: m.codigo,
+          tropaCodigo: m.tropaCodigo,
+          garron: m.garron,
+          peso: m.peso,
+          diasEnCamara: m.diasEnCamara,
+          diasRestantes: m.diasRestantes,
+          estadoVencimiento: m.estadoVencimiento
+        })),
+        totalKg,
+        prioridad: criticosCount * 100 + urgentesCount * 10 + (medias.length > 0 ? medias[0].diasEnCamara : 0)
+      })
+    })
+
+    // Ordenar sugerencias por prioridad (mayor primero)
+    sugerenciasDespacho.sort((a, b) => b.prioridad - a.prioridad)
+
+    // Ordenar alertas por severidad
+    alertas.sort((a, b) => a.diasRestantes - b.diasRestantes)
 
     return NextResponse.json({
       success: true,
-      data: productosConAnalisis,
-      resumenPorProducto: Object.values(resumenPorProducto),
-      stats
+      data: {
+        stockFIFO,
+        resumenPorCamara: Array.from(resumenPorCamara.values()),
+        sugerenciasDespacho,
+        alertas: alertas.map(a => ({
+          tipo: a.tipo,
+          diasRestantes: a.diasRestantes,
+          id: a.mediaRes.id,
+          codigo: a.mediaRes.codigo,
+          tropaCodigo: a.mediaRes.romaneo.tropaCodigo,
+          garron: a.mediaRes.romaneo.garron,
+          peso: a.mediaRes.peso,
+          camara: a.mediaRes.camara?.nombre
+        })),
+        totales: {
+          totalMedias: stockFIFO.length,
+          totalKg: stockFIFO.reduce((acc, m) => acc + m.peso, 0),
+          criticos: stockFIFO.filter(m => m.estadoVencimiento === 'CRITICO').length,
+          urgentes: stockFIFO.filter(m => m.estadoVencimiento === 'URGENTE').length,
+          proximos: stockFIFO.filter(m => m.estadoVencimiento === 'PROXIMO').length
+        }
+      }
     })
   } catch (error) {
-    console.error('Error fetching FIFO:', error)
+    console.error('Error fetching FIFO stock:', error)
     return NextResponse.json(
-      { success: false, error: 'Error al obtener sugerencias FIFO' },
+      { success: false, error: 'Error al obtener stock FIFO' },
       { status: 500 }
     )
   }
 }
 
-// POST - Registrar despacho según FIFO
+// POST - Crear despacho automático según FIFO
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { paqueteIds, despachoId, observaciones } = body
+    const { clienteId, cantidadMedias, camaraId, operadorId } = body
 
-    if (!paqueteIds || !Array.isArray(paqueteIds) || paqueteIds.length === 0) {
+    if (!clienteId || !cantidadMedias) {
       return NextResponse.json(
-        { success: false, error: 'Se requieren IDs de paquetes' },
+        { success: false, error: 'Faltan datos requeridos' },
         { status: 400 }
       )
     }
 
-    // Actualizar estado de los paquetes
-    const actualizados = await Promise.all(
-      paqueteIds.map(paqueteId =>
-        db.registroEmpaque.update({
-          where: { id: paqueteId },
-          data: {
-            estado: 'DESPACHADO',
-            fechaDespacho: new Date(),
-            observaciones: observaciones 
-              ? `Despachado: ${observaciones}` 
-              : 'Despachado según FIFO'
-          }
-        })
+    // Obtener medias reses según FIFO
+    const whereMedia: Record<string, unknown> = { 
+      estado: 'EN_CAMARA',
+      usuarioFaenaId: clienteId 
+    }
+    if (camaraId) whereMedia.camaraId = camaraId
+
+    const mediasRes = await db.mediaRes.findMany({
+      where: whereMedia,
+      orderBy: { fechaFaena: 'asc' },
+      take: cantidadMedias,
+      include: {
+        romaneo: { select: { tropaCodigo: true, garron: true } }
+      }
+    })
+
+    if (mediasRes.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No hay stock disponible' },
+        { status: 400 }
       )
-    )
+    }
+
+    // Crear despacho con las medias seleccionadas según FIFO
+    const ultimoDespacho = await db.despacho.findFirst({
+      orderBy: { numero: 'desc' },
+      select: { numero: true }
+    })
+    const nuevoNumero = (ultimoDespacho?.numero || 0) + 1
+
+    const despacho = await db.despacho.create({
+      data: {
+        numero: nuevoNumero,
+        clienteId,
+        kgTotal: mediasRes.reduce((acc, m) => acc + m.peso, 0),
+        cantidadMedias: mediasRes.length,
+        operadorId,
+        estado: 'PENDIENTE',
+        items: {
+          create: mediasRes.map(m => ({
+            mediaResId: m.id,
+            tropaCodigo: m.romaneo.tropaCodigo,
+            garron: m.romaneo.garron,
+            peso: m.peso
+          }))
+        }
+      },
+      include: { items: true }
+    })
+
+    // Marcar medias como despachadas
+    await db.mediaRes.updateMany({
+      where: { id: { in: mediasRes.map(m => m.id) } },
+      data: { estado: 'DESPACHADO' }
+    })
 
     return NextResponse.json({
       success: true,
-      data: actualizados,
-      message: `${actualizados.length} paquetes despachados según FIFO`
+      data: despacho,
+      message: `Despacho #${despacho.numero} creado con ${mediasRes.length} medias según FIFO`
     })
   } catch (error) {
-    console.error('Error despacho FIFO:', error)
+    console.error('Error creating FIFO despacho:', error)
     return NextResponse.json(
-      { success: false, error: 'Error al registrar despacho FIFO' },
+      { success: false, error: 'Error al crear despacho FIFO' },
       { status: 500 }
     )
   }

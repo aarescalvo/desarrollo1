@@ -3554,3 +3554,61 @@ bun run db:generate
 6. Impresión masiva de rótulos
 7. Auditoría de cambios
 
+---
+Task ID: 1568
+Agent: main
+Task: Implementar Sistema FIFO para control de stock
+
+Work Log:
+
+#### 1. API FIFO Creada
+**Archivo:** `src/app/api/fifo/route.ts`
+- **GET**: Obtiene stock ordenado por fecha de ingreso (FIFO)
+  * Ordena medias reses por fechaFaena (más antiguas primero)
+  * Calcula días en cámara y días restantes de vencimiento
+  * Identifica estados: OK, PROXIMO (≤7 días), URGENTE (≤3 días), CRITICO (vencido)
+  * Genera sugerencias de despacho por cámara
+  * Agrupa por cámara para resumen visual
+- **POST**: Crea despacho automático según FIFO
+  * Selecciona las medias más antiguas primero
+  * Marca medias como DESPACHADO
+
+#### 2. Componente FIFOSugerencias
+**Archivo:** `src/components/stock/fifo-sugerencias.tsx`
+- **Alertas de vencimiento**: Muestra productos críticos, urgentes y próximos
+- **Resumen general**: Total medias, kg, críticos, urgentes, próximos
+- **Sugerencias por cámara**: Lista expandible con productos ordenados por antigüedad
+- **Selección de productos**: Checkbox para seleccionar productos a despachar
+- **Acción rápida**: Botón para seleccionar todos los prioritarios
+- **Badge de estado**: Visual con colores según severidad
+
+#### 3. Integración en Módulo Despachos
+**Archivo:** `src/components/despachos/index.tsx`
+- **Tabs**: Despachos y FIFO/Stock
+- **Tab FIFO**: Muestra sugerencias y permite seleccionar productos
+- **Creación de despacho**: Desde selección FIFO con formulario de destino
+- **Resumen de selección**: Muestra cantidad de medias y kg seleccionados
+
+#### 4. Características del Sistema FIFO
+- **Ordenamiento**: Por fecha de faena (más antiguos primero)
+- **Cálculo de antigüedad**: Días en cámara desde fecha de faena
+- **Estados de vencimiento**:
+  * CRITICO: Vencido (días restantes ≤ 0)
+  * URGENTE: ≤ 3 días restantes
+  * PROXIMO: ≤ 7 días restantes
+  * OK: Más de 7 días restantes
+- **Prioridad de sugerencia**: Basada en críticos × 100 + urgentes × 10 + días en cámara
+
+#### 5. Verificación
+- **Lint**: Sin errores ✓
+- **APIs**: Funcionando correctamente ✓
+- **Componentes**: Integración completa ✓
+
+Stage Summary:
+- **API FIFO completa creada** ✅
+- **Componente FIFOSugerencias implementado** ✅
+- **Integración en módulo Despachos** ✅
+- **Sistema de alertas de vencimiento** ✅
+- **Sugerencias de despacho automáticas** ✅
+- **Versión actualizada a 3.7.0** ✅
+
