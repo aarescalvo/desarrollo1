@@ -3880,3 +3880,37 @@ Stage Summary:
 - **Carpeta pc-produccion creada** ✅
 - **11 scripts .bat funcionales** ✅
 - **README con instrucciones** ✅
+
+---
+Task ID: 1573
+Agent: main
+Task: Verificación de repositorios y estado de módulos pendientes
+
+Work Log:
+
+#### 1. Verificación de Repositorios
+- **desarrollo1**: commit 70c7e36 - v3.7.4 ✅
+- **produccion1**: commit 70c7e36 - v3.7.4 ✅
+- Ambos sincronizados con la misma versión
+
+#### 2. Estado de Módulos Pendientes
+
+| Módulo | Estado | Notas |
+|--------|--------|-------|
+| Productos (30+ campos) | ✅ COMPLETO | Implementado con todos los campos especificados |
+| Movimientos Despostada | ✅ COMPLETO | Registro de cortes, huesos, grasas, mermas |
+| Cortes de Despostada | ⚠️ PLACEHOLDER | Placeholder informativo, usar Movimientos Despostada |
+| Control vencimientos | 📋 PENDIENTE | Falta implementar alertas y filtros |
+| Sistema FIFO | 📋 PENDIENTE | Falta implementar |
+| PDF Trazabilidad | 📋 PENDIENTE | Falta implementar |
+| Editor rótulos | 📋 PENDIENTE | Falta implementar |
+| Auditoría cambios | 📋 PENDIENTE | Modelo existe, falta UI |
+
+#### 3. Corrección Menor
+- `src/components/movimientos-despostada/index.tsx`: Agregado campo `anio` a interfaz Lote
+
+Stage Summary:
+- **Repositorios sincronizados** ✅
+- **Módulo productos completo** ✅
+- **Módulo movimientos despostada completo** ✅
+- **Pendientes identificados** ✅

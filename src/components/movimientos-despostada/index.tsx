@@ -45,6 +45,7 @@ interface Lote {
   numero: number
   estado: string
   totalKg?: number
+  anio?: number
 }
 
 interface Props {
