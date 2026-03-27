@@ -3136,3 +3136,37 @@ Stage Summary:
 - **Script de simulación verificado** ✅
 - **Versión actualizada a 3.5.6** ✅
 
+
+---
+## ✅ SINCRONIZACIÓN COMPLETADA - v3.5.6
+
+### Commits Realizados
+- `167bda5` - v3.5.6 - Selector IVA en facturación, diálogo mejorado, datos de simulación
+
+### Push a Repositorios
+| Repositorio | URL | Estado |
+|-------------|-----|--------|
+| desarrollo1 (origin) | https://github.com/aarescalvo/desarrollo1 | ✅ Sincronizado |
+| produccion1 (produccion) | https://github.com/aarescalvo/produccion1 | ✅ Sincronizado |
+
+### Versión Actual: 3.5.6
+
+### Cambios en esta versión:
+1. **Selector de Tipo de IVA** - Agregado al diálogo de nueva factura con opciones: 21%, 10.5%, 0%, 27%
+2. **Diálogo mejorado** - Aumentado tamaño máximo para mejor visualización
+3. **Cálculo dinámico** - Totales actualizados según IVA seleccionado
+4. **Script de simulación** - Verificado que incluye datos de prueba para todas las instancias
+
+### Comandos para actualizar en producción:
+```bash
+cd /ruta/del/proyecto
+git pull origin master
+bun run db:push
+# Reiniciar servidor
+```
+
+### Para cargar datos de simulación:
+```bash
+bun run prisma/seed-simulacion-completa.ts
+```
+
