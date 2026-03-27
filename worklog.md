@@ -3844,3 +3844,39 @@ Stage Summary:
 - **IVA dinámico en PUT de facturación** ✅
 - **Corrección real del bug de v3.7.3** ✅
 - **Versión actualizada a 3.7.4** ✅
+
+---
+Task ID: 1572
+Agent: main
+Task: Crear carpeta pc-produccion con scripts de gestion para Windows
+
+Work Log:
+
+#### 1. Scripts Creados
+Se creo la carpeta `pc-produccion/` con 11 scripts .bat para Windows:
+
+| # | Script | Funcion |
+|---|--------|---------|
+| 1 | `1-iniciar-server.bat` | Inicia el servidor |
+| 2 | `2-detener-server.bat` | Detiene procesos bun/node |
+| 3 | `3-iniciar-segundo-plano.bat` | Inicia servidor en background |
+| 4 | `4-detener-segundo-plano.bat` | Detiene servidor background |
+| 5 | `5-actualizar-repositorio.bat` | git pull desde GitHub |
+| 6 | `6-actualizar-iniciar.bat` | Actualiza e inicia servidor |
+| 7 | `7-detener-actualizar-iniciar.bat` | Reinicio completo con db:push |
+| 8 | `8-backup-sistema.bat` | Backup sistema (zip, 50 versiones) |
+| 9 | `9-backup-base-datos.bat` | Backup BD (SQLite/PostgreSQL, 50 versiones) |
+| 10 | `10-restaurar-sistema.bat` | Restaurar desde backup (menu) |
+| 11 | `11-restaurar-base-datos.bat` | Restaurar BD desde backup (menu) |
+
+#### 2. Caracteristicas
+- Deteccion automatica de tipo de base de datos (SQLite/PostgreSQL)
+- Backups con version en el nombre del archivo
+- Limpieza automatica manteniendo ultimas 50 versiones
+- Menu interactivo para restauracion
+- Deteccion automatica de repositorio (desarrollo/produccion)
+
+Stage Summary:
+- **Carpeta pc-produccion creada** ✅
+- **11 scripts .bat funcionales** ✅
+- **README con instrucciones** ✅
