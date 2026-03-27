@@ -61,7 +61,8 @@ export async function PUT(
       condicionVenta,
       remito,
       observaciones,
-      detalles
+      detalles,
+      tipoIva = 21 // Porcentaje de IVA, default 21%
     } = body
 
     // Verificar que la factura existe y no está pagada
@@ -97,7 +98,8 @@ export async function PUT(
       for (const det of detalles) {
         subtotal += det.cantidad * det.precioUnitario
       }
-      const iva = subtotal * 0.21
+      const ivaRate = Number(tipoIva) / 100 || 0.21
+      const iva = subtotal * ivaRate
       const total = subtotal + iva
 
       // Eliminar detalles existentes y crear nuevos

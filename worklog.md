@@ -3786,3 +3786,61 @@ Stage Summary:
 - **Error de ChartContainer corregido** ✅
 - **Error al registrar pagos corregido** ✅
 - **Versión actualizada a 3.7.3** ✅
+
+---
+Task ID: 1571
+Agent: main
+Task: Corregir IVA hardcodeado en API de facturación (fix incompleto de v3.7.3)
+
+Work Log:
+
+#### 1. Problema Detectado
+- **Issue**: El commit v3.7.3 NO incluyó la corrección del IVA en la API
+- **Evidencia**: El archivo `src/app/api/facturacion/[id]/route.ts` NO fue modificado en v3.7.3
+- **Síntoma**: Al editar factura, el PUT tenía IVA hardcodeado al 21% (línea 100: `const iva = subtotal * 0.21`)
+
+#### 2. Corrección Realizada
+**Archivo**: `src/app/api/facturacion/[id]/route.ts`
+
+**Antes (línea 59-65):**
+```typescript
+const {
+  clienteId,
+  condicionVenta,
+  remito,
+  observaciones,
+  detalles
+} = body
+```
+
+**Después:**
+```typescript
+const {
+  clienteId,
+  condicionVenta,
+  remito,
+  observaciones,
+  detalles,
+  tipoIva = 21 // Porcentaje de IVA, default 21%
+} = body
+```
+
+**Antes (línea 100):**
+```typescript
+const iva = subtotal * 0.21
+```
+
+**Después:**
+```typescript
+const ivaRate = Number(tipoIva) / 100 || 0.21
+const iva = subtotal * ivaRate
+```
+
+#### 3. Repositorios
+- **desarrollo1**: https://github.com/aarescalvo/desarrollo1
+- **produccion1**: https://github.com/aarescalvo/produccion1
+
+Stage Summary:
+- **IVA dinámico en PUT de facturación** ✅
+- **Corrección real del bug de v3.7.3** ✅
+- **Versión actualizada a 3.7.4** ✅
