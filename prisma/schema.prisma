@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // ==================== CONFIGURACIÓN FRIGORÍFICO ====================
@@ -785,6 +785,11 @@ model MediaRes {
   usuarioFaenaId   String?                // ID del cliente usuario de faena
   usuarioFaena     Cliente?   @relation(fields: [usuarioFaenaId], references: [id])
   
+  // ==================== CONTROL DE VENCIMIENTO ====================
+  fechaFaena        DateTime?   @default(now())  // Fecha de faena (para calcular vencimiento)
+  diasVencimiento   Int         @default(30)      // Días de vida útil (default 30 días)
+  fechaVencimiento  DateTime?                     // Fecha calculada de vencimiento
+  
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   
@@ -793,6 +798,7 @@ model MediaRes {
   @@unique([romaneoId, lado, sigla])
   @@index([estado])
   @@index([usuarioFaenaId])
+  @@index([fechaVencimiento])
 }
 
 enum LadoMedia {

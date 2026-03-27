@@ -1222,6 +1222,51 @@ Stage Summary:
 - **Versión actualizada a 3.6.2** ✅
 
 ---
+Task ID: 1568
+Agent: main
+Task: Implementar control de vencimientos en stock
+
+Work Log:
+
+#### 1. Análisis del Modelo MediaRes
+- Modelo ya tiene campos de vencimiento:
+  - `fechaFaena` - Fecha de faena
+  - `diasVencimiento` - Días de vida útil (default 30)
+  - `fechaVencimiento` - Fecha calculada de vencimiento
+
+#### 2. Campos Agregados a MediaRes
+- `@@index([fechaVencimiento])` - Índice para consultas eficientes
+
+#### 3. API de Vencimientos Creada
+**Archivo:** `src/app/api/vencimientos/route.ts`
+- GET: Lista medias reses por vencer/vencidas
+  - Filtros: `estado` (vencidos, proximos, todos)
+  - Parámetro: `diasAlerta` (default 7)
+  - Incluye estadísticas de peso y cantidad
+- POST: Actualiza fecha de vencimiento
+
+#### 4. Componente de Alertas Creado
+**Archivo:** `src/components/alertas-vencimiento/index.tsx`
+- Dashboard con estadísticas visuales
+- Filtros por estado y días de alerta
+- Tabla con detalles de cada media res
+- Colores indicativos (rojo=vencido, ámbar=próximo)
+- Indicador de días restantes
+
+#### 5. Características del Control de Vencimientos
+- Alerta configurable (3, 5, 7, 10, 14 días)
+- Cálculo automático de días restantes
+- Peso total de productos vencidos/próximos
+- Visualización por cámara y dueño
+
+Stage Summary:
+- **Modelo actualizado con índice** ✅
+- **API de vencimientos creada** ✅
+- **Componente de alertas implementado** ✅
+- **DB sincronizada** ✅
+- **Pantalla de productos verificada (ya completa)** ✅
+
+---
 Task ID: 1565
 Agent: main
 Task: Reescribir API init-zpl con plantillas completas para Zebra y Datamax
