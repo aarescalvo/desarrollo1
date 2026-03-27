@@ -2474,39 +2474,83 @@ model ProductoVendible {
   id                String              @id @default(cuid())
   codigo            String              @unique  // Código corto (MV001, SF001)
   nombre            String                       // "Media Res Bovina"
-  descripcion       String?
+  descripcion       String?                      // Descripción general
   
-  // Clasificación
+  // ==================== DATOS BÁSICOS ====================
+  tara              Float?              @default(0)     // Tara del envase/embalaje
+  vencimientoDias   Int?                @default(0)     // Días adicionales desde fecha de faena
+  numeroRegistroSenasa String?                          // N° Registro Producto SENASA
+  
+  // ==================== UNIDADES Y ETIQUETAS ====================
+  unidadMedida      String              @default("KG")   // KG, UN, ANIMAL
+  cantidadEtiquetas Int                 @default(1)      // Cantidad de etiquetas a imprimir
+  
+  // ==================== TIPIFICACIÓN ====================
+  tieneTipificacion Boolean             @default(false)  // Si tiene tipificación
+  tipificacion      String?                              // A, B, C, etc.
+  
+  // ==================== CLASIFICACIÓN ====================
   categoria         CategoriaProductoVendible
-  subcategoria      String?                      // "Bovino", "Equino"
-  especie           Especie?                     // Si aplica a especie específica
+  subcategoria      String?                              // "Bovino", "Equino"
+  especie           Especie?                             // Si aplica a especie específica
+  tipo              String?                              // Tipo de producto
+  delCuarto         String?                              // "Delantero", "Trasero"
   
-  // Tipo de venta
-  tipoVenta         TipoVenta           @default(POR_KG)  // POR_KG, POR_UNIDAD, POR_ANIMAL
+  // ==================== TIPO DE VENTA ====================
+  tipoVenta         TipoVenta           @default(POR_KG) // POR_KG, POR_UNIDAD, POR_ANIMAL
   
-  // Unidades
-  unidadMedida      String              @default("KG")    // KG, UN, ANIMAL
+  // ==================== DESCRIPCIONES ====================
+  descripcionCircular String?                           // Descripción para circular
   
-  // Precios (lista base, pueden variar por cliente)
-  precioBase        Float?
-  moneda            String              @default("ARS")
+  // ==================== PRECIOS ====================
+  precioBase        Float?                              // Precio base histórico
+  precioDolar       Float?              @default(0)      // Precio en USD
+  precioEuro        Float?              @default(0)      // Precio en EUR
+  precioArs         Float?              @default(0)      // Precio en ARS
+  moneda            String              @default("ARS")  // Moneda principal
+  alicuotaIva       Float               @default(21)     // 21, 10.5, 0
   
-  // IVA
-  alicuotaIva       Float               @default(21)      // 21, 10.5, 0
+  // ==================== CLIENTE Y REPORTES ====================
+  producidoParaCliente String?                          // Cliente específico
+  productoGeneral   Boolean             @default(false)  // Es un producto general
+  productoReporteRinde Boolean           @default(false) // Aparece en reporte de rindes
   
-  // Control
+  // ==================== TRABAJO Y ETIQUETADO ====================
+  tipoTrabajo       String?                              // Tipo de trabajo
+  idiomaEtiqueta    String?              @default("ES")  // ES, EN, PT, etc.
+  formatoEtiqueta   String?                              // Formato de etiqueta
+  textoEtiqueta     String?                              // Texto para etiqueta (campo largo)
+  
+  // ==================== TEXTOS MULTIIDIOMA ====================
+  textoEspanol      String?                              // Texto en español
+  textoIngles       String?                              // Texto en inglés
+  textoTercerIdioma String?                              // Texto en tercer idioma
+  
+  // ==================== LOGÍSTICA ====================
+  temperaturaTransporte String?                          // "Refrigerado", "Congelado"
+  tipoConsumo       String?                              // Tipo de consumo
+  empresa           String?                              // Empresa/productor
+  
+  // ==================== TIPOS ADICIONALES ====================
+  tipoTrabajoId     String?                              // ID de tipo de trabajo
+  tipoCarne         String?                              // Tipo de carne
+  
+  // ==================== CONTROL ====================
   activo            Boolean             @default(true)
-  requiereTrazabilidad Boolean          @default(false)   // Si se vincula con media res
+  requiereTrazabilidad Boolean          @default(false)  // Si se vincula con media res
+  precioActual      Float?              @default(0)      // Precio actual (último actualizado)
   
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   
+  // ==================== RELACIONES ====================
   preciosHistorico  HistoricoPrecioProducto[]
   preciosCliente    PrecioCliente[]
   detallesFactura   DetalleFactura[]
   
   @@index([categoria])
   @@index([activo])
+  @@index([codigo])
 }
 
 enum CategoriaProductoVendible {

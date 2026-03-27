@@ -12,10 +12,20 @@ export async function GET(
     const producto = await db.productoVendible.findUnique({
       where: { id },
       include: {
+        preciosHistorico: {
+          orderBy: { fechaVigencia: 'desc' },
+          take: 10
+        },
+        preciosCliente: {
+          include: {
+            cliente: true
+          }
+        },
         _count: {
           select: {
             preciosCliente: true,
-            preciosHistorico: true
+            preciosHistorico: true,
+            detallesFactura: true
           }
         }
       }
@@ -38,13 +48,13 @@ export async function GET(
       success: true,
       data: {
         ...producto,
-        precioActual: ultimoPrecio?.precioNuevo || producto.precioBase || 0
+        precioActual: ultimoPrecio?.precioNuevo || producto.precioBase || producto.precioArs || 0
       }
     })
   } catch (error) {
     console.error('Error obteniendo producto vendible:', error)
     return NextResponse.json(
-      { success: false, error: 'Error al obtener producto' },
+      { success: false, error: 'Error al obtener producto: ' + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     )
   }
@@ -58,21 +68,6 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const {
-      codigo,
-      nombre,
-      descripcion,
-      categoria,
-      subcategoria,
-      especie,
-      tipoVenta,
-      unidadMedida,
-      precioBase,
-      moneda,
-      alicuotaIva,
-      requiereTrazabilidad,
-      activo
-    } = body
 
     // Verificar que el producto existe
     const existente = await db.productoVendible.findUnique({
@@ -87,9 +82,9 @@ export async function PUT(
     }
 
     // Si se cambia el código, verificar que no exista otro con ese código
-    if (codigo && codigo !== existente.codigo) {
+    if (body.codigo && body.codigo !== existente.codigo) {
       const conEseCodigo = await db.productoVendible.findUnique({
-        where: { codigo }
+        where: { codigo: body.codigo }
       })
       if (conEseCodigo) {
         return NextResponse.json(
@@ -99,24 +94,77 @@ export async function PUT(
       }
     }
 
-    const producto = await db.productoVendible.update({
-      where: { id },
-      data: {
-        codigo: codigo || existente.codigo,
-        nombre: nombre || existente.nombre,
-        descripcion: descripcion !== undefined ? descripcion : existente.descripcion,
-        categoria: categoria || existente.categoria,
-        subcategoria: subcategoria !== undefined ? subcategoria : existente.subcategoria,
-        especie: especie !== undefined ? especie : existente.especie,
-        tipoVenta: tipoVenta || existente.tipoVenta,
-        unidadMedida: unidadMedida || existente.unidadMedida,
-        precioBase: precioBase !== undefined ? precioBase : existente.precioBase,
-        moneda: moneda || existente.moneda,
-        alicuotaIva: alicuotaIva !== undefined ? alicuotaIva : existente.alicuotaIva,
-        requiereTrazabilidad: requiereTrazabilidad !== undefined ? requiereTrazabilidad : existente.requiereTrazabilidad,
-        activo: activo !== undefined ? activo : existente.activo
+    // Preparar datos de actualización
+    const updateData: Record<string, unknown> = {
+      updatedAt: new Date()
+    }
+
+    // Campos básicos
+    const camposSimples = [
+      'codigo', 'nombre', 'descripcion', 'subcategoria', 'especie', 'tipo',
+      'delCuarto', 'tipificacion', 'unidadMedida', 'categoria', 'tipoVenta',
+      'descripcionCircular', 'moneda', 'producidoParaCliente', 'tipoTrabajo',
+      'idiomaEtiqueta', 'formatoEtiqueta', 'textoEtiqueta', 'textoEspanol',
+      'textoIngles', 'textoTercerIdioma', 'temperaturaTransporte', 'tipoConsumo',
+      'empresa', 'tipoTrabajoId', 'tipoCarne', 'numeroRegistroSenasa'
+    ]
+
+    camposSimples.forEach(campo => {
+      if (body[campo] !== undefined) {
+        updateData[campo] = body[campo]
       }
     })
+
+    // Campos numéricos
+    const camposNumericos = [
+      'tara', 'vencimientoDias', 'cantidadEtiquetas', 'precioBase',
+      'precioDolar', 'precioEuro', 'precioArs', 'alicuotaIva'
+    ]
+
+    camposNumericos.forEach(campo => {
+      if (body[campo] !== undefined) {
+        updateData[campo] = body[campo] ? parseFloat(body[campo]) : 0
+      }
+    })
+
+    // Campos booleanos
+    const camposBooleanos = [
+      'tieneTipificacion', 'productoGeneral', 'productoReporteRinde',
+      'activo', 'requiereTrazabilidad'
+    ]
+
+    camposBooleanos.forEach(campo => {
+      if (body[campo] !== undefined) {
+        updateData[campo] = Boolean(body[campo])
+      }
+    })
+
+    // Actualizar precioActual si se actualiza precioArs
+    if (body.precioArs !== undefined) {
+      updateData.precioActual = parseFloat(body.precioArs) || 0
+    } else if (body.precioBase !== undefined) {
+      updateData.precioActual = parseFloat(body.precioBase) || 0
+    }
+
+    const producto = await db.productoVendible.update({
+      where: { id },
+      data: updateData
+    })
+
+    // Si cambió el precio, crear registro en historico
+    const nuevoPrecio = body.precioArs || body.precioBase
+    if (nuevoPrecio && parseFloat(nuevoPrecio) !== existente.precioArs) {
+      await db.historicoPrecioProducto.create({
+        data: {
+          productoVendibleId: id,
+          precioAnterior: existente.precioArs || existente.precioBase,
+          precioNuevo: parseFloat(nuevoPrecio),
+          moneda: body.moneda || 'ARS',
+          motivo: body.motivoCambioPrecio || 'Actualización de precio',
+          operadorId: body.operadorId || null
+        }
+      })
+    }
 
     return NextResponse.json({
       success: true,
@@ -126,7 +174,7 @@ export async function PUT(
   } catch (error) {
     console.error('Error actualizando producto vendible:', error)
     return NextResponse.json(
-      { success: false, error: 'Error al actualizar producto' },
+      { success: false, error: 'Error al actualizar producto: ' + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     )
   }
@@ -165,7 +213,7 @@ export async function DELETE(
   } catch (error) {
     console.error('Error desactivando producto vendible:', error)
     return NextResponse.json(
-      { success: false, error: 'Error al desactivar producto' },
+      { success: false, error: 'Error al desactivar producto: ' + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     )
   }

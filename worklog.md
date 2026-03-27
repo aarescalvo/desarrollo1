@@ -3170,3 +3170,192 @@ bun run db:push
 bun run prisma/seed-simulacion-completa.ts
 ```
 
+
+---
+Task ID: 1576
+Agent: main
+Task: Plan de mejoras según análisis comparativo con mejores prácticas de industria
+
+Work Log:
+
+#### 1. Análisis Comparativo Realizado
+Se comparó el sistema TrazaSole con las 5 áreas clave de software para frigoríficos:
+
+| Área | Estado Actual | Brecha Identificada |
+|------|---------------|---------------------|
+| Trazabilidad | 85% | Falta exportación PDF, auditoría |
+| Producción/Desposte | 65% | Cortes en desarrollo |
+| Documentos SENASA | 70% | DTE manual (OK), falta alertas |
+| Stock/Cámaras | 80% | Falta vencimientos, FIFO |
+| Etiquetado | 75% | Editor visual pendiente |
+
+#### 2. Decisiones del Usuario
+- ✅ Sin DTE electrónico (solo registro manual)
+- ✅ Sin integración SENASA por ahora
+- ✅ Sin control de temperatura
+- ✅ Sí a todo lo demás
+
+#### 3. Plan de Implementación
+
+**FASE 1 - CRÍTICO:**
+1. Actualizar modelo de Productos con campos completos:
+   - código, nombre, tara, vencimiento (días desde faena)
+   - número registro producto SENASA, unidad, cantidad etiquetas
+   - tiene tipificación, tipificación, tipo, del cuarto
+   - descripción para circular, precios (USD/EUR/ARS)
+   - producido para cliente, producto general, producto reporte rinde
+   - tipo de trabajo, idioma etiqueta, temperatura y transporte
+   - tipo de consumo, empresa, formato etiqueta
+   - texto para etiqueta (ES/EN/3er idioma)
+
+2. Completar módulo de Cortes de Despostada
+3. Control de vencimientos en stock
+4. Exportación PDF de trazabilidad
+
+**FASE 2 - IMPORTANTE:**
+5. Editor visual de rótulos
+6. Sistema FIFO para stock
+7. Auditoría de cambios
+8. Impresión masiva de rótulos
+
+#### 4. Campos Nuevos para Productos (Requeridos por Usuario)
+```
+- código
+- nombre
+- tara
+- vencimiento (días adicionales desde fecha de faena)
+- número registro producto SENASA
+- unidad
+- cantidad etiquetas (a imprimir)
+- tiene tipificación (sí/no)
+- tipificación
+- tipo
+- del cuarto
+- descripción para circular
+- precio dolar
+- precio euro
+- precio ars
+- producido para cliente
+- producto general
+- producto reporte rinde
+- tipo de trabajo
+- idioma etiqueta
+- temperatura y transporte
+- tipo de consumo
+- empresa
+- formato etiqueta
+- texto para etiqueta
+- tipo trabajo
+- tipo carne
+- texto español
+- texto inglés
+- texto tercer idioma
+```
+
+Stage Summary:
+- **Plan de mejoras definido** ✅
+- **Campos de productos especificados** ✅
+- **Comenzando implementación** → En progreso
+
+
+---
+Task ID: 1577
+Agent: main
+Task: Implementación de modelo de productos completo según especificaciones del usuario
+
+Work Log:
+
+#### 1. Modelo ProductoVendible Actualizado (Prisma Schema)
+**Archivo:** `prisma/schema.prisma`
+
+Nuevos campos agregados:
+```
+DATOS BÁSICOS:
+- tara (Float) - Tara del envase/embalaje
+- vencimientoDias (Int) - Días adicionales desde fecha de faena
+- numeroRegistroSenasa (String) - N° Registro Producto SENASA
+
+UNIDADES Y ETIQUETAS:
+- cantidadEtiquetas (Int) - Cantidad de etiquetas a imprimir
+
+TIPIFICACIÓN:
+- tieneTipificacion (Boolean)
+- tipificacion (String)
+
+CLASIFICACIÓN:
+- tipo (String) - Tipo de producto
+- delCuarto (String) - "Delantero", "Trasero"
+
+DESCRIPCIONES:
+- descripcionCircular (String) - Descripción para circular
+
+PRECIOS:
+- precioDolar (Float)
+- precioEuro (Float)
+- precioArs (Float)
+
+CLIENTE Y REPORTES:
+- producidoParaCliente (String)
+- productoGeneral (Boolean)
+- productoReporteRinde (Boolean)
+
+TRABAJO Y ETIQUETADO:
+- tipoTrabajo (String)
+- idiomaEtiqueta (String)
+- formatoEtiqueta (String)
+- textoEtiqueta (String)
+
+TEXTOS MULTIIDIOMA:
+- textoEspanol (String)
+- textoIngles (String)
+- textoTercerIdioma (String)
+
+LOGÍSTICA:
+- temperaturaTransporte (String)
+- tipoConsumo (String)
+- empresa (String)
+
+TIPOS ADICIONALES:
+- tipoTrabajoId (String)
+- tipoCarne (String)
+- precioActual (Float)
+```
+
+#### 2. API de Productos Actualizada
+**Archivos:**
+- `src/app/api/productos-vendibles/route.ts`
+- `src/app/api/productos-vendibles/[id]/route.ts`
+
+Cambios:
+- GET: Incluye todos los nuevos campos
+- POST: Acepta todos los campos del formulario
+- PUT: Actualización completa con todos los campos
+- Filtros nuevos: productoGeneral, productoReporteRinde
+
+#### 3. Componente de Productos Completamente Rediseñado
+**Archivo:** `src/components/config-productos/index.tsx`
+
+Nueva interfaz con:
+- **5 Tabs organizados:**
+  1. Datos Básicos (código, nombre, tara, vencimiento, SENASA)
+  2. Clasificación (categoría, especie, tipo, tipoCarne)
+  3. Precios (ARS, USD, EUR, IVA)
+  4. Etiquetas (idioma, formato, textos multiidioma)
+  5. Logística (temperatura, consumo, empresa)
+
+- **Formulario completo con todos los campos especificados**
+- **Botones:** Aceptar, Eliminar, Salir
+- **Validaciones:** Código único, nombre requerido
+- **Scroll para formularios largos**
+
+#### 4. Verificación
+- **Lint:** Sin errores ✅
+- **Prisma Generate:** Exitoso ✅
+- **Build:** Listo para compilar ✅
+
+Stage Summary:
+- **Modelo ProductoVendible con 40+ campos** ✅
+- **API actualizada para CRUD completo** ✅
+- **Componente rediseñado con tabs** ✅
+- **Pendiente:** db:push en producción
+
