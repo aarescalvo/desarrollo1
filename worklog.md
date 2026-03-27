@@ -2991,3 +2991,47 @@ Stage Summary:
 - **Build exitoso** ✅
 - **Versión actualizada a 3.5.4** ✅
 
+
+---
+Task ID: 1573
+Agent: main
+Task: Corregir API facturación y crear script de simulación completa
+
+Work Log:
+
+#### 1. Error en API Facturación
+**Problema:** Error 500 al crear factura por uso incorrecto del modelo `HistoricoPrecio`
+
+**Solución:**
+- Corregido el modelo usado: `db.historicoPrecio` con campos correctos
+- Agregado manejo de errores con try/catch
+- Validación de cliente existente antes de crear factura
+- Cálculo correcto de totales con IVA configurable
+
+#### 2. Script de Simulación Completa
+**Archivo:** `prisma/seed-simulacion-completa.ts`
+
+**Datos que crea:**
+- Clientes (4): Productores y usuarios de faena
+- Corrales (4): Con stock inicial
+- Cámaras (4): Faena, cuarteo y depósito
+- Productos Vendibles (5): Media res, cuartos, servicio faena, menudencias
+- Tropas (3): Con animales, estados variados
+- Animales (36): Distribuidos en tropas
+- Lista de Faena (1): Con romaneos
+- Romaneos (12): Con medias reses
+- Despachos (1): Pendiente de facturación
+- Facturas (2): Una pagada, una pendiente
+- Operador admin: Usuario admin, contraseña admin123
+
+#### 3. Archivos Modificados
+| Archivo | Cambios |
+|---------|---------|
+| `api/facturacion/route.ts` | Corregido error 500, validaciones, IVA configurable |
+| `prisma/seed-simulacion-completa.ts` | Script de simulación completo |
+
+Stage Summary:
+- **API de facturación corregida** ✅
+- **Script de simulación creado** ✅
+- **Versión actualizada a 3.5.5** ✅
+
