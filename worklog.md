@@ -2717,3 +2717,84 @@ Stage Summary:
 - **Push a producción completado** ✅
 - **Lint sin errores** ✅
 - **Sistema completamente sincronizado** ✅
+
+---
+Task ID: 1569
+Agent: main
+Task: Completar 5 funcionalidades de facturación: Productos, Historial Precios, Precios Cliente, Gráficos, Facturar Remitos
+
+Work Log:
+
+#### 1. Pantalla de Productos y Servicios (TAB PRODUCTOS)
+- Nuevo tab "Productos" en módulo de facturación
+- Tabla completa con código, nombre, categoría, tipo de venta, precio actual
+- Diálogo para crear/editar productos con todos los campos:
+  * Código único, nombre, descripción
+  * Categoría (Producto Cárnico, Servicio Faena, Menudencia, etc.)
+  * Tipo de venta (Por Kg, Por Unidad, Servicio)
+  * Precio base, alícuota IVA
+  * Requiere trazabilidad (checkbox)
+- Botón para ver histórico de precios por producto
+
+#### 2. Pantalla de Historial de Precios
+- Diálogo "Histórico de Precios" con tabla de cambios
+- Muestra: fecha, precio anterior, precio nuevo, variación %, motivo
+- Indicadores visuales de aumento (rojo ↑) o baja (verde ↓)
+- Formulario para actualizar precio con motivo
+- Al guardar, actualiza precioBase y crea registro histórico
+
+#### 3. Pantalla de Precios por Cliente (TAB PRECIOS CLIENTE)
+- Nuevo tab "Precios Cliente" en módulo de facturación
+- Tabla con: cliente, producto, precio especial, vigencia, estado
+- Diálogo para crear precio especial:
+  * Selector de cliente
+  * Selector de producto
+  * Precio especial acordado
+- API `/api/precios-cliente` con GET, POST, PUT, DELETE
+
+#### 4. Pantalla de Gráficos (TAB INFORMES MEJORADO)
+- Controles para tipo de gráfico: semanal, mensual, por cliente
+- Filtros: fecha desde/hasta, cliente
+- Gráficos implementados:
+  * Semanal: AreaChart con evolución de facturación
+  * Mensual: AreaChart con comparativa mensual
+  * Por Cliente: BarChart con top 10 clientes
+- Cálculo automático de totales y pagados
+
+#### 5. UI de Facturación desde Remitos (MEJORADO)
+- Diálogo "Facturar desde Remitos" completo
+- Selección de cliente con dropdown
+- Lista de remitos pendientes con checkbox
+- Tabla de items con:
+  * Producto, peso, precio sugerido
+  * Precio a facturar (input editable)
+  * Subtotal calculado
+  * Botón eliminar item
+- Servicios adicionales agregables
+- Totales: subtotal, IVA 21%, total
+- Validación: todos los precios deben confirmarse
+
+#### 6. APIs Creadas/Actualizadas
+- `/api/productos-vendibles/[id]` - GET, PUT, DELETE para producto individual
+- `/api/precios-cliente` - GET, POST, PUT, DELETE completo
+- `/api/facturacion/informes` - Gráficos con filtros
+- `/api/facturacion/desde-remitos` - Facturación desde remitos
+- `/api/historico-precios-producto` - Histórico con variaciones
+
+#### 7. Funcionalidades Clave Implementadas
+- **NADA automático**: todos los precios se confirman manualmente
+- **Todo editable**: se pueden sumar/quitar items y servicios
+- **Productos agregables**: catálogo dinámico de productos y servicios
+- **Historial de precios**: tracking de cambios con motivo
+- **Precios por cliente**: acuerdos especiales por cliente/producto
+- **Gráficos flexibles**: semanal, mensual, por cliente
+
+Stage Summary:
+- **5 funcionalidades completadas** ✅
+- **Productos y Servicios**: CRUD completo con histórico ✅
+- **Historial de Precios**: Visualización y actualización ✅
+- **Precios por Cliente**: Gestión de acuerdos especiales ✅
+- **Gráficos**: Semanales, mensuales, por cliente ✅
+- **Facturación desde Remitos**: Completa y editable ✅
+- **APIs**: Todas creadas y funcionando ✅
+- **Versión actualizada a 3.5.0** ✅
