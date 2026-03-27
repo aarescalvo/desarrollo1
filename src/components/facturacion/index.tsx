@@ -185,7 +185,7 @@ export function FacturacionModule({ operador }: Props) {
   
   // ========== ESTADOS DE FILTROS ==========
   const [filtroEstado, setFiltroEstado] = useState<string>('TODOS')
-  const [filtroClienteId, setFiltroClienteId] = useState<string>('')
+  const [filtroClienteId, setFiltroClienteId] = useState<string>('_TODOS_')
   const [filtroFechaDesde, setFiltroFechaDesde] = useState<string>('')
   const [filtroFechaHasta, setFiltroFechaHasta] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -299,7 +299,7 @@ export function FacturacionModule({ operador }: Props) {
     try {
       const params = new URLSearchParams()
       if (filtroEstado !== 'TODOS') params.append('estado', filtroEstado)
-      if (filtroClienteId) params.append('clienteId', filtroClienteId)
+      if (filtroClienteId && filtroClienteId !== '_TODOS_') params.append('clienteId', filtroClienteId)
       if (filtroFechaDesde) params.append('desde', filtroFechaDesde)
       if (filtroFechaHasta) params.append('hasta', filtroFechaHasta)
       if (searchTerm) params.append('search', searchTerm)
@@ -358,7 +358,7 @@ export function FacturacionModule({ operador }: Props) {
     try {
       const params = new URLSearchParams()
       params.append('tipo', tipoGrafico)
-      if (filtroClienteId) params.append('clienteId', filtroClienteId)
+      if (filtroClienteId && filtroClienteId !== '_TODOS_') params.append('clienteId', filtroClienteId)
       if (filtroFechaDesde) params.append('fechaDesde', filtroFechaDesde)
       if (filtroFechaHasta) params.append('fechaHasta', filtroFechaHasta)
 
@@ -1101,7 +1101,7 @@ export function FacturacionModule({ operador }: Props) {
                       <SelectValue placeholder="Todos los clientes" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos los clientes</SelectItem>
+                      <SelectItem value="_TODOS_">Todos los clientes</SelectItem>
                       {clientes.map((c) => (
                         <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
                       ))}
@@ -1352,7 +1352,7 @@ export function FacturacionModule({ operador }: Props) {
                       <SelectValue placeholder="Seleccionar cliente" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos los clientes</SelectItem>
+                      <SelectItem value="_TODOS_">Todos los clientes</SelectItem>
                       {clientes.map((c) => (
                         <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
                       ))}
@@ -1360,7 +1360,7 @@ export function FacturacionModule({ operador }: Props) {
                   </Select>
                 </div>
                 
-                {filtroClienteId ? (
+                {filtroClienteId !== '_TODOS_' ? (
                   <div className="space-y-3">
                     {facturasFiltradas.filter(f => f.clienteId === filtroClienteId).length === 0 ? (
                       <div className="py-8 text-center text-stone-400">
@@ -1443,7 +1443,7 @@ export function FacturacionModule({ operador }: Props) {
                       <SelectValue placeholder="Todos los clientes" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos los clientes</SelectItem>
+                      <SelectItem value="_TODOS_">Todos los clientes</SelectItem>
                       {clientes.map((c) => (
                         <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
                       ))}

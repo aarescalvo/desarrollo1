@@ -894,7 +894,7 @@ export function ReportesAvanzadosModule({ operador }: ReportesAvanzadosProps) {
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas</SelectItem>
+                    <SelectItem value="_TODOS_">Todas</SelectItem>
                     <SelectItem value="BOVINO">Bovino</SelectItem>
                     <SelectItem value="EQUINO">Equino</SelectItem>
                   </SelectContent>
@@ -909,7 +909,7 @@ export function ReportesAvanzadosModule({ operador }: ReportesAvanzadosProps) {
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="_TODOS_">Todos</SelectItem>
                     {productores.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.nombre}

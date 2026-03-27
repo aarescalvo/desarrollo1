@@ -165,7 +165,7 @@ export function StockInsumos({ operador }: Props) {
                 <SelectValue placeholder="Todos los insumos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="_TODOS_">Todos</SelectItem>
                 {insumos.map((ins) => (
                   <SelectItem key={ins.id} value={ins.id}>
                     {ins.codigo ? `${ins.codigo} - ` : ''}{ins.nombre}
@@ -181,7 +181,7 @@ export function StockInsumos({ operador }: Props) {
                 <SelectValue placeholder="Todos los depósitos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="_TODOS_">Todos</SelectItem>
                 {depositos.map((dep) => (
                   <SelectItem key={dep.id} value={dep.id}>
                     {dep.codigo ? `${dep.codigo} - ` : ''}{dep.nombre}

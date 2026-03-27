@@ -743,7 +743,7 @@ export function MenudenciasTropaModule({ operador }: { operador: Operador }) {
                       <SelectValue placeholder="Todas las tropas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas las tropas</SelectItem>
+                      <SelectItem value="_TODOS_">Todas las tropas</SelectItem>
                       {tropas.map((t) => (
                         <SelectItem key={t.id} value={t.codigo}>{t.codigo}</SelectItem>
                       ))}

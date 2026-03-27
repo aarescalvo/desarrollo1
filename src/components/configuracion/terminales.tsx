@@ -366,7 +366,7 @@ export function Terminales({ operador }: { operador: Operador }) {
                     <SelectValue placeholder="Seleccionar..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
+                    <SelectItem value="_SIN_ASIGNAR_">Sin asignar</SelectItem>
                     {getBalanzasPorUbicacion(formData.ubicacion).map((b: Balanza) => (
                       <SelectItem key={b.id} value={b.id}>{b.nombre}</SelectItem>
                     ))}
@@ -391,7 +391,7 @@ export function Terminales({ operador }: { operador: Operador }) {
                     <SelectValue placeholder="Seleccionar..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
+                    <SelectItem value="_SIN_ASIGNAR_">Sin asignar</SelectItem>
                     {(getImpresorasPorUbicacion(formData.ubicacion).length > 0 ? getImpresorasPorUbicacion(formData.ubicacion) : impresoras).map((i: Impresora) => (
                       <SelectItem key={i.id} value={i.id}>{i.nombre}</SelectItem>
                     ))}

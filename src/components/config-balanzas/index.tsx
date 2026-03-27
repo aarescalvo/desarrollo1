@@ -694,7 +694,7 @@ export function ConfigBalanzasModule({ operador }: Props) {
                 <Select value={puestoForm.balanzaId} onValueChange={(v) => setPuestoForm({...puestoForm, balanzaId: v})}>
                   <SelectTrigger><SelectValue placeholder="Sin balanza" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin balanza</SelectItem>
+                    <SelectItem value="_SIN_ASIGNAR_">Sin balanza</SelectItem>
                     {balanzas.filter(b => b.activa).map(b => (
                       <SelectItem key={b.id} value={b.id}>{b.nombre}</SelectItem>
                     ))}

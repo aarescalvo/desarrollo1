@@ -2885,3 +2885,44 @@ Stage Summary:
 - **Versión actualizada a 3.5.2** ✅
 - **Push a ambos repositorios** ✅
 
+
+---
+Task ID: 1571
+Agent: main
+Task: Fix error Radix UI - SelectItem con value vacío no permitido
+
+Work Log:
+
+#### 1. Error Detectado
+- **Error**: `A <Select.Item /> must have a value prop that is not an empty string`
+- **Causa**: Radix UI Select no permite `value=""` en SelectItem porque usa string vacío para limpiar selección
+- **Impacto**: Consola mostrando errores en múltiples componentes
+
+#### 2. Archivos Corregidos
+| Archivo | Cambio |
+|---------|--------|
+| `facturacion/index.tsx` | `value=""` → `value="_TODOS_"` (3 lugares) |
+| `menudencias-tropa/index.tsx` | `value=""` → `value="_TODOS_"` |
+| `configuracion/observaciones-usuario.tsx` | `value=""` → `value="_TODOS_"` (3 lugares) |
+| `configuracion/stock-insumos.tsx` | `value=""` → `value="_TODOS_"` (2 lugares) |
+| `config-balanzas/index.tsx` | `value=""` → `value="_SIN_ASIGNAR_"` |
+| `configuracion/codigos-articulo.tsx` | `value=""` → `value="_TODOS_"` |
+| `configuracion/subproductos-config.tsx` | `value=""` → `value="_TODOS_"` |
+| `configuracion/terminales.tsx` | `value=""` → `value="_SIN_ASIGNAR_"` (2 lugares) |
+| `config-tipos-producto/index.tsx` | `value=""` → `value="_SIN_ESPECIFICAR_"` |
+| `reportes-avanzados.tsx` | `value=""` → `value="_TODOS_"` (2 lugares) |
+
+#### 3. Ajustes de Lógica
+- `facturacion/index.tsx`: Cambiado estado inicial de `filtroClienteId` de `''` a `'_TODOS_'`
+- Actualizadas condiciones de filtrado para usar `!== '_TODOS_'` en lugar de truthy check
+
+#### 4. Verificación
+- **Lint**: Sin errores ✅
+- **Total archivos corregidos**: 10
+
+Stage Summary:
+- **Error de Radix UI corregido** ✅
+- **10 archivos actualizados** ✅
+- **Lógica de filtros ajustada** ✅
+- **Versión actualizada a 3.5.3** ✅
+

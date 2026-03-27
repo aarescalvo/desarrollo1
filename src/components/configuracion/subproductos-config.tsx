@@ -434,7 +434,7 @@ export function SubproductosConfig({ operador }: { operador: Operador }) {
                     <SelectValue placeholder="Seleccionar..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas</SelectItem>
+                    <SelectItem value="_TODOS_">Todas</SelectItem>
                     {ESPECIES.map(e => (
                       <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>
                     ))}

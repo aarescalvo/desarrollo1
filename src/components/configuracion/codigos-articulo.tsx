@@ -283,7 +283,7 @@ export function CodigosArticulo() {
               <SelectValue placeholder="Categoría" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas</SelectItem>
+              <SelectItem value="_TODOS_">Todas</SelectItem>
               {CATEGORIAS.map(c => (
                 <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
               ))}

@@ -497,7 +497,7 @@ export function ConfigTiposProductoModule({ operador }: { operador: Operador }) 
                 <Select value={formData.especie} onValueChange={(value) => setFormData({ ...formData, especie: value })}>
                   <SelectTrigger><SelectValue placeholder="Sin especificar" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin especificar</SelectItem>
+                    <SelectItem value="_SIN_ESPECIFICAR_">Sin especificar</SelectItem>
                     {ESPECIES.map(e => (
                       <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>
                     ))}
