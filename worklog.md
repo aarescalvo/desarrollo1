@@ -2798,3 +2798,61 @@ Stage Summary:
 - **Facturación desde Remitos**: Completa y editable ✅
 - **APIs**: Todas creadas y funcionando ✅
 - **Versión actualizada a 3.5.0** ✅
+
+---
+Task ID: 1569
+Agent: main
+Task: Mejoras en backup y Excel de importación
+
+Work Log:
+
+#### 1. Script de Backup Modificado
+**Archivos:** `backup-sistema.bat` y `install/server/backup.bat`
+
+**Cambios:**
+- Cambiado de "mantener últimos 30 días" a "mantener últimos 50 backups"
+- Lógica por cantidad en lugar de por fecha
+- Elimina los archivos más antiguos cuando excede 50
+- Muestra resumen de backups eliminados y totales
+
+**Código clave:**
+```batch
+set MAX_BACKUPS=50
+set BACKUP_COUNT=0
+for /f %%i in ('dir "%BACKUP_DIR%\*.sql" /b 2^>nul ^| find /c /v ""') do set BACKUP_COUNT=%%i
+if %BACKUP_COUNT% gtr %MAX_BACKUPS% (
+    set /a EXCESS=%BACKUP_COUNT%-%MAX_BACKUPS%
+    :: Eliminar los más antiguos...
+)
+```
+
+#### 2. Excel de Importación Mejorado
+**Archivo:** `upload/PLANTILLA_IMPORTACION_DATOS.xlsx`
+
+**Nuevos campos agregados:**
+- `TROPAS_HISTORICAS`: Campo `tiposAnimales` (formato: "TO:5, VA:3, NO:2")
+- `ROMANEOS_HISTORICAS`: Campo `precioKg` para facturación
+
+**Nuevas hojas creadas:**
+1. `PRODUCTOS_VENDIBLES`: Catálogo de productos/servicios facturables
+   - Campos: codigo, nombre, descripcion, categoria, unidadMedida, precioBase, alicuotaIva, esActivo, observaciones
+   - Categorías: PRODUCTO_CARNICO, SERVICIO_FAENA, OTROS
+   - 7 productos de ejemplo incluidos
+
+2. `PRECIOS_CLIENTE`: Precios especiales por cliente
+   - Campos: clienteCUIT, productoCodigo, precioEspecial, fechaDesde, fechaHasta, observaciones
+
+3. `DETALLE_FACTURAS`: Detalle de items facturados
+   - Campos: facturaNumero, productoCodigo, tipoProducto, descripcion, cantidad, unidad, precioUnitario, subtotal, tropaCodigo, garron, pesoKg, observaciones
+
+#### 3. Estructura Final del Excel
+- Total de hojas: 18
+- Nuevas hojas para facturación: 3
+- Campos agregados: 2
+
+Stage Summary:
+- **Backup cambiado a 50 archivos máximo** ✅
+- **Excel con campos de tipo de animal** ✅
+- **Nuevas hojas para módulo de facturación** ✅
+- **Versión actualizada a 3.5.1** ✅
+

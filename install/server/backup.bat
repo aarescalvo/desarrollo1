@@ -71,11 +71,38 @@ if exist "%BACKUP_FILE%" (
     exit /b 1
 )
 
-:: Limpiar backups antiguos (mantener últimos 30 días)
+:: Limpiar backups antiguos (mantener últimos 50 backups)
 echo.
-echo [3/4] Limpiando backups antiguos...
-forfiles /p "%BACKUP_DIR%" /m *.db /d -30 /c "cmd /c del @path" 2>nul
-echo [OK] Backups antiguos eliminados
+echo [3/4] Limpiando backups antiguos (manteniendo últimos 50)...
+
+:: Contar backups actuales
+set BACKUP_COUNT=0
+for /f %%i in ('dir "%BACKUP_DIR%\*.db" /b 2^>nul ^| find /c /v ""') do set BACKUP_COUNT=%%i
+
+:: Si hay más de 50, eliminar los más antiguos
+if %BACKUP_COUNT% gtr 50 (
+    set /a EXCESS=%BACKUP_COUNT%-50
+    echo [INFO] Hay %BACKUP_COUNT% backups, eliminando %EXCESS% más antiguos...
+
+    :: Crear lista temporal de archivos ordenados por fecha (más antiguos primero)
+    dir "%BACKUP_DIR%\*.db" /o:d /b > "%TEMP%\backups_list.txt"
+
+    :: Eliminar los excedentes (los más antiguos)
+    setlocal enabledelayedexpansion
+    set COUNT=0
+    for /f "usebackq delims=" %%f in ("%TEMP%\backups_list.txt") do (
+        set /a COUNT+=1
+        if !COUNT! leq %EXCESS% (
+            del "%BACKUP_DIR%\%%f" 2>nul
+            echo [ELIMINADO] %%f
+        )
+    )
+    endlocal
+    del "%TEMP%\backups_list.txt" 2>nul
+) else (
+    echo [OK] Hay %BACKUP_COUNT% backups, no es necesario limpiar
+)
+echo [OK] Limpieza completada
 
 :: Mostrar resumen
 echo.
