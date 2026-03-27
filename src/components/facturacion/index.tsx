@@ -208,6 +208,7 @@ export function FacturacionModule({ operador }: Props) {
     condicionVenta: 'CONTADO',
     remito: '',
     observaciones: '',
+    tipoIva: 21, // Porcentaje de IVA
     detalles: [] as DetalleFactura[]
   })
   
@@ -559,6 +560,7 @@ export function FacturacionModule({ operador }: Props) {
       condicionVenta: 'CONTADO',
       remito: '',
       observaciones: '',
+      tipoIva: 21,
       detalles: [{ 
         tipoProducto: 'OTRO', 
         descripcion: '', 
@@ -874,7 +876,8 @@ export function FacturacionModule({ operador }: Props) {
 
   const calcularTotalesForm = () => {
     const subtotal = formData.detalles.reduce((sum, d) => sum + d.subtotal, 0)
-    const iva = subtotal * 0.21
+    const ivaRate = (formData.tipoIva || 21) / 100
+    const iva = subtotal * ivaRate
     const total = subtotal + iva
     return { subtotal, iva, total }
   }
@@ -1497,14 +1500,14 @@ export function FacturacionModule({ operador }: Props) {
 
         {/* Diálogo Nueva/Editar Factura */}
         <Dialog open={dialogOpen || editOpen} onOpenChange={(v) => { setDialogOpen(v); setEditOpen(v) }}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editOpen ? 'Editar Factura' : 'Nueva Factura'}</DialogTitle>
               <DialogDescription>Complete los datos de la factura</DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label>Cliente *</Label>
                   <Select value={formData.clienteId} onValueChange={(v) => setFormData(prev => ({ ...prev, clienteId: v }))}>
@@ -1521,6 +1524,18 @@ export function FacturacionModule({ operador }: Props) {
                     <SelectContent>
                       <SelectItem value="CONTADO">Contado</SelectItem>
                       <SelectItem value="CUENTA_CORRIENTE">Cuenta Corriente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Tipo de IVA</Label>
+                  <Select value={String(formData.tipoIva || 21)} onValueChange={(v) => setFormData(prev => ({ ...prev, tipoIva: parseFloat(v) }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="21">IVA 21%</SelectItem>
+                      <SelectItem value="10.5">IVA 10.5%</SelectItem>
+                      <SelectItem value="0">Sin IVA (0%)</SelectItem>
+                      <SelectItem value="27">IVA 27%</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1579,7 +1594,7 @@ export function FacturacionModule({ operador }: Props) {
               {/* Totales */}
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between"><span>Subtotal:</span><span>{formatCurrency(calcularTotalesForm().subtotal)}</span></div>
-                <div className="flex justify-between"><span>IVA (21%):</span><span>{formatCurrency(calcularTotalesForm().iva)}</span></div>
+                <div className="flex justify-between"><span>IVA ({formData.tipoIva || 21}%):</span><span>{formatCurrency(calcularTotalesForm().iva)}</span></div>
                 <div className="flex justify-between font-bold text-lg"><span>Total:</span><span>{formatCurrency(calcularTotalesForm().total)}</span></div>
               </div>
             </div>

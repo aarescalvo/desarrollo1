@@ -3087,3 +3087,52 @@ Stage Summary:
 3. Agregar selector de tipo de IVA funcional
 4. Cargar datos de simulación en todas las instancias
 
+
+---
+Task ID: 1575
+Agent: main
+Task: Correcciones en módulo de facturación - Selector IVA y visualización
+
+Work Log:
+
+#### 1. Selector de Tipo de IVA Agregado
+**Archivo:** `src/components/facturacion/index.tsx`
+- Agregado campo `tipoIva` al estado `formData` (default: 21%)
+- Creado selector de tipo de IVA con opciones:
+  - IVA 21%
+  - IVA 10.5%
+  - Sin IVA (0%)
+  - IVA 27%
+- Actualizada función `calcularTotalesForm()` para usar IVA dinámico
+- Actualizada visualización de totales para mostrar porcentaje seleccionado
+
+#### 2. Mejora en Visualización del Diálogo
+- Cambiado `max-h-[90vh]` a `max-h-[95vh]` para mejor visualización
+- Cambiado grid de 2 a 3 columnas para incluir selector de IVA
+- Mejorada distribución de campos en el formulario
+
+#### 3. Script de Simulación Completa
+**Archivo existente:** `prisma/seed-simulacion-completa.ts`
+- El script ya incluye todos los datos de prueba necesarios:
+  - Clientes (4): Productores y usuarios de faena
+  - Corrales (4): Con stock inicial
+  - Cámaras (4): Faena, cuarteo y depósito
+  - Productos Vendibles (5): Media res, cuartos, servicios
+  - Tropas (3): Con animales y estados variados
+  - Animales (36): Distribuidos en tropas
+  - Lista de Faena (1): Con romaneos
+  - Romaneos (12): Con medias reses
+  - Despachos (1): Pendiente de facturación
+  - Facturas (2): Una pagada, una pendiente
+  - Operador admin: Usuario admin, contraseña admin123
+
+#### 4. Verificación
+- **Lint:** Sin errores ✅
+- **Build:** Exitoso ✅
+
+Stage Summary:
+- **Selector de IVA implementado** ✅
+- **Diálogo de factura mejorado** ✅
+- **Script de simulación verificado** ✅
+- **Versión actualizada a 3.5.6** ✅
+
