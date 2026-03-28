@@ -5,8 +5,8 @@ title TrazaSole - Backup Base de Datos
 color 0B
 
 :: Configuración
-set "INSTALL_DIR=%~dp0.."
-set "BACKUP_DIR=%INSTALL_DIR%\backups\database"
+set "INSTALL_DIR=%~dp0"
+set "BACKUP_DIR=%INSTALL_DIR%backups\database"
 set "MAX_BACKUPS=50"
 
 echo.

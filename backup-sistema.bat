@@ -1,93 +1,106 @@
 @echo off
 chcp 65001 >nul
-title TrazaSole - Backup de Base de Datos PostgreSQL
+setlocal enabledelayedexpansion
+title TrazaSole - Backup Sistema Completo
 color 0B
 
 :: Configuración
-set "INSTALL_DIR=C:\TrazaSole"
-set "BACKUP_DIR=C:\TrazaSole\backups"
+set "INSTALL_DIR=%~dp0"
+set "BACKUP_DIR=%INSTALL_DIR%backups\sistema"
 set "MAX_BACKUPS=50"
 
 echo.
 echo ════════════════════════════════════════════════════════════════
-echo   TRAZASOLE - Backup de Base de Datos PostgreSQL
+echo   TRAZASOLE - Backup del Sistema Completo
 echo ════════════════════════════════════════════════════════════════
 echo.
 
 cd /d "%INSTALL_DIR%"
 
-REM Crear carpeta de backups si no existe
+:: Crear carpeta de backups si no existe
 if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%"
 
-REM Obtener fecha y hora para el nombre del backup
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set datetime=%%I
-set FECHA=%datetime:~0,4%-%datetime:~4,2%-%datetime:~6,2%
-set HORA=%datetime:~8,2%-%datetime:~10,2%
-set VERSION=v3.4.1
+:: Obtener versión del package.json
+set VERSION=unknown
+if exist "package.json" (
+    for /f "tokens=2 delims=:, " %%a in ('findstr /c:"\"version\"" package.json 2^>nul') do (
+        set VERSION=%%a
+        set VERSION=!VERSION:"=!
+    )
+)
 
-REM Nombre del archivo de backup
-set BACKUP_FILE=%BACKUP_DIR%\backup_%FECHA%_%HORA%_%VERSION%.sql
+:: Obtener fecha y hora
+for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value 2^>nul') do set DT=%%a
+set FECHA=%DT:~0,4%-%DT:~4,2%-%DT:~6,2%
+set HORA=%DT:~8,2%-%DT:~10,2%-%DT:~12,2%
+set TIMESTAMP=%FECHA%_%HORA%
 
-echo [1/3] Creando backup de PostgreSQL...
-echo        Archivo: %BACKUP_FILE%
+:: Nombre del backup
+set BACKUP_NAME=trazasole_v%VERSION%_%TIMESTAMP%
+set BACKUP_FILE=%BACKUP_DIR%\%BACKUP_NAME%.zip
+
+echo [INFO] Version del sistema: %VERSION%
+echo [INFO] Fecha: %FECHA% - Hora: %HORA%
+echo.
+echo [1/3] Creando backup del sistema...
+echo        Archivo: %BACKUP_NAME%.zip
 echo.
 
-REM Crear backup usando pg_dump (PostgreSQL)
-set PGPASSWORD=1810
-"C:\Program Files\PostgreSQL\16\bin\pg_dump.exe" -U postgres -h localhost -d trazasole -F p -f "%BACKUP_FILE%" 2>nul
+:: Crear backup excluyendo carpetas pesadas
+powershell -Command "& { ^
+    $exclude = @('backups', 'node_modules', '.next', '.git', 'servidor.log', '*.log', 'mini-services'); ^
+    $items = Get-ChildItem -Path '.' | Where-Object { $exclude -notcontains $_.Name } | ForEach-Object { $_.FullName }; ^
+    if ($items.Count -gt 0) { ^
+        Compress-Archive -Path $items -DestinationPath '%BACKUP_FILE%' -Force; ^
+        exit 0; ^
+    } else { ^
+        exit 1; ^
+    } ^
+}"
 
-if %ERRORLEVEL% equ 0 (
-    echo [OK] Backup creado exitosamente!
-    echo.
-    echo ========================================
-    echo   Backup guardado en:
-    echo   %BACKUP_FILE%
-    echo ========================================
-) else (
+if %errorlevel% neq 0 (
     echo [ERROR] No se pudo crear el backup
-    echo.
-    echo Verifica que PostgreSQL este corriendo y las credenciales sean correctas.
     pause
     exit /b 1
 )
 
-:: Limpiar backups antiguos (mantener últimos 50)
+echo [OK] Backup creado exitosamente!
 echo.
+
+:: Limpiar backups antiguos (mantener últimos 50)
 echo [2/3] Limpiando backups antiguos (manteniendo últimos %MAX_BACKUPS%)...
 
 set BACKUP_COUNT=0
-for /f %%i in ('dir "%BACKUP_DIR%\*.sql" /b 2^>nul ^| find /c /v ""') do set BACKUP_COUNT=%%i
+for /f %%i in ('dir "%BACKUP_DIR%\*.zip" /b 2^>nul ^| find /c /v ""') do set BACKUP_COUNT=%%i
 
 if %BACKUP_COUNT% gtr %MAX_BACKUPS% (
     set /a EXCESS=%BACKUP_COUNT%-%MAX_BACKUPS%
     echo [INFO] Hay %BACKUP_COUNT% backups, eliminando %EXCESS% más antiguos...
-
-    dir "%BACKUP_DIR%\*.sql" /o:d /b > "%TEMP%\backups_list.txt"
-
-    setlocal enabledelayedexpansion
+    
+    dir "%BACKUP_DIR%\*.zip" /o:d /b > "%TEMP%\backups_sistema_list.txt"
+    
     set COUNT=0
-    for /f "usebackq delims=" %%f in ("%TEMP%\backups_list.txt") do (
+    for /f "usebackq delims=" %%f in ("%TEMP%\backups_sistema_list.txt") do (
         set /a COUNT+=1
         if !COUNT! leq %EXCESS% (
             del "%BACKUP_DIR%\%%f" 2>nul
             echo [ELIMINADO] %%f
         )
     )
-    endlocal
-    del "%TEMP%\backups_list.txt" 2>nul
+    del "%TEMP%\backups_sistema_list.txt" 2>nul
 ) else (
     echo [OK] Hay %BACKUP_COUNT% backups, no es necesario limpiar
 )
 
+:: Resumen
 echo.
 echo [3/3] Resumen de backups disponibles:
 echo ════════════════════════════════════════════════════════════════
-dir "%BACKUP_DIR%\*.sql" /o-d /b 2>nul | findstr /n "." | findstr "^[1-5]:"
+dir "%BACKUP_DIR%\*.zip" /o-d /b 2>nul | findstr /n "." | findstr "^[1-5]:"
 echo ...
-echo.
-for /f %%i in ('dir "%BACKUP_DIR%\*.sql" /b 2^>nul ^| find /c /v ""') do echo Total: %%i backups en disco
+for /f %%i in ('dir "%BACKUP_DIR%\*.zip" /b 2^>nul ^| find /c /v ""') do echo Total: %%i backups en disco
 echo ════════════════════════════════════════════════════════════════
 echo.
-echo [OK] Backup completado exitosamente!
+echo [OK] Backup del sistema completado!
 echo.
 pause
