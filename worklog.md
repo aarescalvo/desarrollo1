@@ -4363,3 +4363,68 @@ Stage Summary:
 - **Generacion ZPL/DPL automatica** ✅
 - **Version actualizada a 3.7.17** ✅
 - **Push a desarrollo1 completado** ✅
+
+---
+Task ID: 1602
+Agent: main
+Task: Mejorar editor visual con drag and drop real usando dnd-kit
+
+Work Log:
+
+#### 1. Problemas Identificados por Usuario
+- Pantalla del editor visual muy pequena
+- Drag and drop no funcionaba (solo era visual, no interactivo)
+- No se podian agregar imagenes
+- No se podian eliminar elementos una vez agregados
+
+#### 2. Componentes Creados
+
+**VisualEditor.tsx:**
+- Editor visual profesional con @dnd-kit/core
+- Panel de herramientas a la izquierda (6 tipos de elementos)
+- Canvas central con zoom (1x-4x)
+- Panel de propiedades a la derecha
+- Soporte para drag and drop REAL de elementos
+- Variables arrastrables y click para asignar
+
+**SortableElement.tsx:**
+- Elementos arrastrables con useDraggable de dnd-kit
+- Botones de eliminar (X roja) y duplicar
+- Handle de arrastre en esquina superior izquierda
+- Bordes y estilos para elemento seleccionado
+- Handles de redimensionamiento en esquinas
+
+**ElementEditor.tsx:**
+- Panel de propiedades completo para cada tipo de elemento
+- Posicion X/Y en puntos
+- Tamano ancho/alto
+- Configuracion especifica por tipo:
+  * TEXTO: fuente, tamano, negrita, alineacion, variable/texto fijo
+  * CODIGO_BARRAS: tipo de codigo, alto, mostrar texto
+  * QR: variable/texto
+  * LINEA/RECTANGULO: grosor
+  * IMAGEN: carga de archivo (PNG, JPG, BMP, max 500KB)
+
+#### 3. Funcionalidades Implementadas
+- Drag and drop REAL con posicionamiento en canvas
+- Zoom del canvas (1x a 4x)
+- Seleccion de elementos con click
+- Eliminacion de elementos con boton X
+- Duplicacion de elementos
+- Carga de imagenes en base64
+- Panel de variables disponibles
+- Generacion automatica de ZPL/DPL
+
+#### 4. Dependencias Utilizadas
+- @dnd-kit/core (ya instalado)
+- @dnd-kit/sortable (ya instalado)
+- @dnd-kit/utilities (ya instalado)
+
+Stage Summary:
+- **Editor visual profesional creado** ✅
+- **Drag and drop real funcionando** ✅
+- **Soporte para imagenes** ✅
+- **Eliminacion de elementos** ✅
+- **Canvas mas grande con zoom** ✅
+- **Version actualizada a 3.7.18** ✅
+- **Push a ambos repositorios** ✅

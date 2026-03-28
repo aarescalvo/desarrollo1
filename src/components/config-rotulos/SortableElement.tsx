@@ -102,7 +102,7 @@ export function SortableElement({
         return elemento.imagenBase64 ? (
           <img 
             src={elemento.imagenBase64} 
-            alt="Elemento de imagen del rotulo" 
+            alt="Imagen del rótulo" 
             className="w-full h-full object-contain"
           />
         ) : (

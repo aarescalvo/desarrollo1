@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { TipoRotulo } from '@prisma/client'
 import { Textarea } from '@/components/ui/textarea'
+import { VisualEditor, RotuloElement } from './VisualEditor'
 
 interface Operador { id: string; nombre: string; rol: string }
 interface Props { operador: Operador }
@@ -85,26 +86,7 @@ interface VariableDetectada {
   descripcion: string
 }
 
-// Elemento para editor visual
-interface RotuloElement {
-  id: string
-  tipo: 'TEXTO' | 'CODIGO_BARRAS' | 'LINEA' | 'RECTANGULO' | 'QR'
-  campo?: string
-  textoFijo?: string
-  posX: number
-  posY: number
-  ancho: number
-  alto: number
-  fuente: string
-  tamano: number
-  negrita: boolean
-  alineacion: 'LEFT' | 'CENTER' | 'RIGHT'
-  tipoCodigo?: string
-  altoCodigo?: number
-  mostrarTexto?: boolean
-  grosorLinea?: number
-  orden: number
-}
+// El tipo RotuloElement viene de VisualEditor.tsx e incluye IMAGEN
 
 interface Rotulo {
   id: string
@@ -616,8 +598,8 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
       tipo,
       posX: 10,
       posY: 10 + elementosVisuales.length * 30,
-      ancho: tipo === 'LINEA' ? 200 : 100,
-      alto: tipo === 'CODIGO_BARRAS' ? 60 : 30,
+      ancho: tipo === 'LINEA' ? 200 : tipo === 'IMAGEN' ? 80 : 100,
+      alto: tipo === 'CODIGO_BARRAS' ? 60 : tipo === 'IMAGEN' ? 80 : 30,
       fuente: '0',
       tamano: 10,
       negrita: false,
@@ -682,6 +664,14 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
           zpl += `^FD${el.textoFijo || `{{${el.campo}}}`}\n`
           zpl += `^FS\n`
           break
+        case 'IMAGEN':
+          if (el.imagenBase64) {
+            // Para imágenes, usamos ~DY para descargar gráficos
+            zpl += `~DYR:IMG${el.id},P,P,${el.ancho},${el.alto},${el.imagenBase64.length}\n`
+            zpl += `^FO${el.posX},${el.posY}\n`
+            zpl += `^XGR:IMG${el.id},1,1^FS\n`
+          }
+          break
       }
     }
     
@@ -712,6 +702,17 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
           break
         case 'RECTANGULO':
           dpl += `ESC R ${el.posX};${el.posY};${el.posX + el.ancho};${el.posY + el.alto};${el.grosorLinea || 2}\n`
+          break
+        case 'QR':
+          dpl += `ESC Q ${el.posX};${el.posY};${el.tamano}\n`
+          dpl += `${el.textoFijo || `{{${el.campo}}}`}\n`
+          break
+        case 'IMAGEN':
+          // DPL soporta imágenes con comando I
+          if (el.imagenBase64) {
+            dpl += `ESC I ${el.posX};${el.posY};${el.ancho};${el.alto}\n`
+            dpl += `${el.imagenBase64.substring(0, 100)}...\n`
+          }
           break
       }
     }
@@ -1262,244 +1263,76 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
         </DialogContent>
       </Dialog>
 
-      {/* Modal Editor Visual */}
+      {/* Modal Editor Visual - Pantalla Completa */}
       <Dialog open={modalEditor} onOpenChange={setModalEditor}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Palette className="w-5 h-5 text-amber-500" />
-              Editor Visual de Rótulos
-            </DialogTitle>
-          </DialogHeader>
-
-          {editandoRotuloVisual && (
-            <div className="space-y-4">
-              {/* Configuración general */}
-              <div className="grid grid-cols-4 gap-3">
-                <div>
-                  <Label className="text-xs">Nombre</Label>
-                  <Input 
-                    value={editandoRotuloVisual.nombre}
-                    onChange={(e) => setEditandoRotuloVisual(prev => prev ? {...prev, nombre: e.target.value} : null)}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Ancho (mm)</Label>
-                  <Input 
-                    type="number"
-                    value={editandoRotuloVisual.ancho}
-                    onChange={(e) => setEditandoRotuloVisual(prev => prev ? {...prev, ancho: parseInt(e.target.value) || 80} : null)}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Alto (mm)</Label>
-                  <Input 
-                    type="number"
-                    value={editandoRotuloVisual.alto}
-                    onChange={(e) => setEditandoRotuloVisual(prev => prev ? {...prev, alto: parseInt(e.target.value) || 50} : null)}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Tipo</Label>
-                  <Select 
-                    value={editandoRotuloVisual.tipoImpresora}
-                    onValueChange={(v) => setEditandoRotuloVisual(prev => prev ? {...prev, tipoImpresora: v} : null)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ZEBRA">Zebra (ZPL)</SelectItem>
-                      <SelectItem value="DATAMAX">Datamax (DPL)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 overflow-hidden">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b bg-stone-50">
+              <div className="flex items-center gap-2">
+                <Palette className="w-5 h-5 text-amber-500" />
+                <h2 className="text-lg font-bold">Editor Visual de Rótulos</h2>
               </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                {/* Canvas */}
-                <div className="col-span-2">
-                  <Label className="text-xs mb-2 block">Canvas (arrastre elementos para posicionar)</Label>
-                  <div 
-                    className="relative border-2 border-dashed border-stone-300 bg-white mx-auto"
-                    style={{ 
-                      width: `${Math.min(editandoRotuloVisual.ancho * 3, 400)}px`,
-                      height: `${Math.min(editandoRotuloVisual.alto * 3, 250)}px`,
-                    }}
-                  >
-                    {elementosVisuales.map((el) => (
-                      <div
-                        key={el.id}
-                        className="absolute cursor-move border border-amber-300 bg-amber-50 hover:bg-amber-100 flex items-center justify-center text-xs"
-                        style={{
-                          left: `${el.posX}px`,
-                          top: `${el.posY}px`,
-                          width: `${el.ancho}px`,
-                          height: el.tipo === 'LINEA' ? `${el.grosorLinea || 2}px` : `${el.alto}px`,
-                          fontSize: `${Math.min(el.tamano, 12)}px`,
-                          fontWeight: el.negrita ? 'bold' : 'normal',
-                        }}
-                      >
-                        {el.tipo === 'TEXTO' && (el.textoFijo || `{{${el.campo}}}`)}
-                        {el.tipo === 'CODIGO_BARRAS' && <BarcodeIcon className="w-4 h-4" />}
-                        {el.tipo === 'QR' && <QrCode className="w-4 h-4" />}
-                        {el.tipo === 'LINEA' && ''}
-                        {el.tipo === 'RECTANGULO' && '□'}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Botones para agregar elementos */}
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    <Button variant="outline" size="sm" onClick={() => agregarElementoVisual('TEXTO')}>
-                      <Type className="w-4 h-4 mr-1" /> Texto
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => agregarElementoVisual('CODIGO_BARRAS')}>
-                      <BarcodeIcon className="w-4 h-4 mr-1" /> Cód. Barras
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => agregarElementoVisual('QR')}>
-                      <QrCode className="w-4 h-4 mr-1" /> QR
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => agregarElementoVisual('LINEA')}>
-                      <Square className="w-4 h-4 mr-1" /> Línea
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => agregarElementoVisual('RECTANGULO')}>
-                      <Square className="w-4 h-4 mr-1" /> Rectángulo
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Panel de propiedades */}
-                <div className="space-y-3">
-                  <Label className="text-xs font-semibold">Elementos ({elementosVisuales.length})</Label>
-                  <ScrollArea className="h-64 border rounded p-2">
-                    <div className="space-y-2">
-                      {elementosVisuales.map((el, idx) => (
-                        <Card key={el.id} className="p-2">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium">
-                              {idx + 1}. {el.tipo}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-5 w-5 p-0"
-                              onClick={() => eliminarElementoVisual(el.id)}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-1 text-xs">
-                            <div>
-                              <span className="text-stone-400">X:</span>
-                              <Input
-                                type="number"
-                                value={el.posX}
-                                onChange={(e) => actualizarElementoVisual(el.id, { posX: parseInt(e.target.value) || 0 })}
-                                className="h-6 text-xs"
-                              />
-                            </div>
-                            <div>
-                              <span className="text-stone-400">Y:</span>
-                              <Input
-                                type="number"
-                                value={el.posY}
-                                onChange={(e) => actualizarElementoVisual(el.id, { posY: parseInt(e.target.value) || 0 })}
-                                className="h-6 text-xs"
-                              />
-                            </div>
-                          </div>
-
-                          {el.tipo === 'TEXTO' && (
-                            <div className="mt-1">
-                              <Select
-                                value={el.campo || 'TEXTO_FIJO'}
-                                onValueChange={(v) => actualizarElementoVisual(el.id, { 
-                                  campo: v === 'TEXTO_FIJO' ? undefined : v,
-                                  textoFijo: v === 'TEXTO_FIJO' ? (el.textoFijo || 'Texto') : undefined
-                                })}
-                              >
-                                <SelectTrigger className="h-6 text-xs">
-                                  <SelectValue placeholder="Variable" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="TEXTO_FIJO">Texto fijo</SelectItem>
-                                  {VARIABLES_DISPONIBLES.map(v => (
-                                    <SelectItem key={v.id} value={v.id}>{v.nombre}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              {el.textoFijo && (
-                                <Input
-                                  value={el.textoFijo}
-                                  onChange={(e) => actualizarElementoVisual(el.id, { textoFijo: e.target.value })}
-                                  className="h-6 text-xs mt-1"
-                                  placeholder="Texto fijo"
-                                />
-                              )}
-                            </div>
-                          )}
-
-                          {el.tipo === 'CODIGO_BARRAS' && (
-                            <Select
-                              value={el.campo || 'CODIGO_BARRAS'}
-                              onValueChange={(v) => actualizarElementoVisual(el.id, { campo: v })}
-                            >
-                              <SelectTrigger className="h-6 text-xs mt-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {VARIABLES_DISPONIBLES.filter(v => v.id.includes('CODIGO') || v.id.includes('GARRON')).map(v => (
-                                  <SelectItem key={v.id} value={v.id}>{v.nombre}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </Card>
-                      ))}
+              <div className="flex items-center gap-2">
+                {editandoRotuloVisual && (
+                  <>
+                    <Input 
+                      value={editandoRotuloVisual.nombre}
+                      onChange={(e) => setEditandoRotuloVisual(prev => prev ? {...prev, nombre: e.target.value} : null)}
+                      className="w-48"
+                      placeholder="Nombre del rótulo"
+                    />
+                    <div className="flex items-center gap-1 text-sm text-stone-500">
+                      <span>{editandoRotuloVisual.ancho}x{editandoRotuloVisual.alto}mm</span>
+                      <span className="text-stone-300">|</span>
+                      <span>{editandoRotuloVisual.tipoImpresora}</span>
                     </div>
-                  </ScrollArea>
-
-                  {/* Variables disponibles */}
-                  <div>
-                    <Label className="text-xs">Variables Disponibles</Label>
-                    <ScrollArea className="h-24 border rounded p-1">
-                      {VARIABLES_DISPONIBLES.map(v => (
-                        <div key={v.id} className="text-xs py-0.5">
-                          <code className="text-amber-600">{'{{' + v.id + '}}'}</code>
-                          <span className="text-stone-400 ml-1">- {v.nombre}</span>
-                        </div>
-                      ))}
-                    </ScrollArea>
-                  </div>
-                </div>
-              </div>
-
-              {/* Código generado */}
-              <div>
-                <Label className="text-xs">Código Generado ({editandoRotuloVisual.tipoImpresora === 'DATAMAX' ? 'DPL' : 'ZPL'})</Label>
-                <Textarea
-                  value={editandoRotuloVisual.tipoImpresora === 'DATAMAX' ? generarDPL() : generarZPL()}
-                  readOnly
-                  className="font-mono text-xs h-32 bg-stone-50"
-                />
+                  </>
+                )}
               </div>
             </div>
-          )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalEditor(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleGuardarRotuloVisual}
-              className="bg-amber-500 hover:bg-amber-600"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Guardar Rótulo
-            </Button>
-          </DialogFooter>
+            {/* Contenido principal con VisualEditor */}
+            <div className="flex-1 overflow-hidden">
+              {editandoRotuloVisual && (
+                <VisualEditor
+                  elementos={elementosVisuales}
+                  onChange={setElementosVisuales}
+                  ancho={editandoRotuloVisual.ancho}
+                  alto={editandoRotuloVisual.alto}
+                  tipoImpresora={editandoRotuloVisual.tipoImpresora as 'ZEBRA' | 'DATAMAX'}
+                  dpi={editandoRotuloVisual.dpi}
+                />
+              )}
+            </div>
+
+            {/* Footer con código generado */}
+            <div className="border-t bg-stone-50">
+              <div className="flex items-center gap-2 p-2">
+                <Button variant="outline" size="sm" onClick={() => setModalEditor(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={handleGuardarRotuloVisual}
+                  className="bg-amber-500 hover:bg-amber-600"
+                >
+                  <Save className="w-4 h-4 mr-1" />
+                  Guardar Rótulo
+                </Button>
+              </div>
+              {editandoRotuloVisual && (
+                <div className="px-2 pb-2">
+                  <Textarea
+                    value={editandoRotuloVisual.tipoImpresora === 'DATAMAX' ? generarDPL() : generarZPL()}
+                    readOnly
+                    className="font-mono text-xs h-20 bg-stone-100"
+                    placeholder="Código generado..."
+                  />
+                </div>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
