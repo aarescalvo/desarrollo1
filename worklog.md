@@ -2986,3 +2986,88 @@ Stage Summary:
 - **Sistema de precios por cliente listo** ✅
 - **Sistema de pagos parciales listo** ✅
 - **Pendiente: UI de facturación real**
+
+---
+Task ID: 1580
+Agent: main
+Task: Rollback a versión estable v3.7.22 tras errores en facturación
+
+Work Log:
+
+#### 1. ERRORES COMETIDOS (IMPORTANTE - NO REPETIR)
+
+**Error #1: Cambios de facturación sin verificar en producción**
+- Se hicieron cambios en el módulo de facturación (v3.7.23)
+- Los cambios incluían: modal de detalle, pagos, notas de débito
+- **Problema**: No se verificó que el servidor compile correctamente antes de subir
+- **Resultado**: Pantalla gris congelada en producción tras login
+
+**Error #2: No limpiar caché de Turbopack después de cambios grandes**
+- Turbopack puede quedar en estado inconsistente
+- El error fue: `inner_of_upper_lost_followers` (panic de Turbopack)
+- **Solución**: SIEMPRE ejecutar `Remove-Item -Recurse -Force .next` en PowerShell
+
+**Error #3: Subir cambios sin verificar en PC de desarrollo primero**
+- Se subieron cambios directamente a producción sin probar
+- **Regla**: SIEMPRE verificar en desarrollo antes de push a producción
+
+#### 2. Síntomas del Problema
+- Dashboard se quedaba en "Compiling..." por minutos
+- Al hacer login, pantalla gris con overlay (modal bloqueado)
+- APIs respondían correctamente pero UI no cargaba
+- localStorage tenía sesión guardada que podía causar conflictos
+
+#### 3. Solución Aplicada
+```powershell
+# Volver a versión estable anterior
+git checkout b998316
+git checkout master
+git reset --hard b998316
+Remove-Item -Recurse -Force .next
+bun run dev
+```
+
+#### 4. Versión Estable Actual
+- **Versión**: v3.7.22
+- **Commit**: b998316
+- **Contenido**: Editor rótulos pantalla completa + fix IVA 0%
+- **Estado**: FUNCIONANDO CORRECTAMENTE
+
+#### 5. Lecciones Aprendidas
+1. ⚠️ **SIEMPRE** verificar `bun run lint` sin errores antes de commit
+2. ⚠️ **SIEMPRE** limpiar `.next` después de cambios grandes
+3. ⚠️ **SIEMPRE** probar en desarrollo antes de push a producción
+4. ⚠️ **SIEMPRE** hacer push a AMBOS repositorios
+5. ⚠️ Verificar que el servidor compile en menos de 30 segundos
+6. ⚠️ Si hay pantalla gris, probar `localStorage.clear()` en consola
+
+Stage Summary:
+- **Rollback completado a v3.7.22** ✅
+- **Sistema funcionando en producción** ✅
+- **Errores documentados para evitar repetir** ✅
+- **Cambios de facturación descartados** (se reharán correctamente)
+- **Versión estable guardada** ✅
+
+---
+## 📋 CHECKLIST DE FINALIZACIÓN (OBLIGATORIO)
+
+Al terminar CADA sesión de trabajo, verificar:
+
+| Item | Comando/Acción | Estado |
+|------|----------------|--------|
+| 1. Lint | `bun run lint` | [ ] Sin errores |
+| 2. Versión | Editar package.json | [ ] Incrementada |
+| 3. Worklog | Editar worklog.md | [ ] Actualizado |
+| 4. Git Add | `git add -A` | [ ] Hecho |
+| 5. Git Commit | `git commit -m "vX.Y.Z - mensaje"` | [ ] Hecho |
+| 6. Push origin | `git push origin master` | [ ] Hecho |
+| 7. Push desarrollo | `git push desarrollo master` | [ ] Hecho |
+| 8. Verificar GitHub | Ambos repos actualizados | [ ] Hecho |
+
+### Formato de versión:
+- **Major (X.0.0)**: Cambios grandes/nuevos módulos
+- **Minor (0.X.0)**: Nuevas funcionalidades
+- **Patch (0.0.X)**: Bug fixes, mejoras menores
+
+### Versión actual: **3.7.22**
+### Próxima versión sugerida: **3.7.23**
