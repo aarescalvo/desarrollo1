@@ -1,9 +1,9 @@
 {
   "name": "frigorifico-sistema",
-  "version": "3.7.10",
+  "version": "3.7.11",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p 3000 --turbopack=false",
     "dev:log": "next dev -p 3000 > dev.log 2>&1",
     "build": "next build",
     "start": "bun .next/standalone/server.js",
