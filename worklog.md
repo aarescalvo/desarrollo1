@@ -4311,3 +4311,55 @@ Stage Summary:
 - **INDEX.md creado con instrucciones** ✅
 - **Versión actualizada a 3.7.17** ✅
 - **Pendiente: lint y push a GitHub**
+
+---
+Task ID: 1601
+Agent: main
+Task: Implementar modulo de rotulos mejorado con editor visual
+
+Work Log:
+
+#### 1. Backup de Version Anterior
+- Creado `src/components/config-rotulos-viejo/` con todos los archivos anteriores
+- Preservados: index.tsx, LabelDesigner.tsx, editor-drag-drop.tsx, importador-zpl.tsx, preview-zpl.tsx
+
+#### 2. Nuevo Modulo Implementado
+**Archivo:** `src/components/config-rotulos/index.tsx`
+
+**Funcionalidades principales:**
+- Importar plantillas ZPL/DPL/NLBL desde archivos
+- Editor visual drag & drop para crear rótulos
+- Panel de propiedades para cada elemento
+- Vista previa en tiempo real con datos de prueba
+- Generación automática de ZPL y DPL
+- Impresión directa a impresoras Zebra/Datamax por IP
+
+**Elementos soportados:**
+- Texto (fijo o variable)
+- Codigo de barras (CODE128)
+- Codigo QR
+- Lineas y rectangulos
+
+**Variables disponibles (20):**
+- NUMERO, TROPA, TIPO, PESO, CODIGO, RAZA
+- FECHA, FECHA_VENC, PRODUCTO, GARRON, LADO, SIGLA
+- PESO_NETO, USUARIO_FAENA, MATRICULA, CODIGO_BARRAS
+- CUIT, ESTABLECIMIENTO, DIAS_CONSUMO, etc.
+
+#### 3. Estructura del Modulo
+```
+src/components/config-rotulos/
+├── index.tsx          # Modulo principal (unificado)
+└── (viejo/)           # Backup en config-rotulos-viejo/
+```
+
+#### 4. Modelos Utilizados
+- Rotulo (Prisma) - Plantillas de rotulos
+- Campos: id, nombre, codigo, tipo, ancho, alto, dpi, contenido, elementos, etc.
+
+Stage Summary:
+- **Backup de version anterior creado** ✅
+- **Editor visual implementado** ✅
+- **Generacion ZPL/DPL automatica** ✅
+- **Version actualizada a 3.7.17** ✅
+- **Push a desarrollo1 completado** ✅
