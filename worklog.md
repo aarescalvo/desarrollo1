@@ -3071,3 +3071,38 @@ Al terminar CADA sesión de trabajo, verificar:
 
 ### Versión actual: **3.7.22**
 ### Próxima versión sugerida: **3.7.23**
+
+---
+Task ID: 1581
+Agent: main
+Task: Rollback a versión estable tras pantalla gris en dashboard
+
+Work Log:
+
+#### 1. Problema Reportado
+- Usuario reportó pantalla gris congelada después del login
+- El dashboard no cargaba, se quedaba en overlay gris
+- APIs funcionaban correctamente (200 OK)
+
+#### 2. Diagnóstico
+- Turbopack tenía error: `inner_of_upper_lost_followers` (panic)
+- Posible modal/dialog bloqueado en la UI
+- Se intentó limpiar caché .next sin éxito
+
+#### 3. Solución Aplicada
+```powershell
+# Reset al commit estable
+git reset --hard 8849330
+Remove-Item -Recurse -Force .next
+```
+
+#### 4. Commit de Restauración
+- **Commit**: 8849330
+- **Mensaje**: "v3.7.22 - Rollback a versión estable + documentación de errores"
+- **Estado**: ESTABLE
+
+Stage Summary:
+- **Rollback completado** ✅
+- **Versión 3.7.22** ✅
+- **Subiendo a ambos repositorios** ✅
+
