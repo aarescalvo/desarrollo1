@@ -1,18 +1,17 @@
 @echo off
-chcp 65001 >nul
 setlocal enabledelayedexpansion
-title TrazaSole - Backup Sistema Completo
+title TrazaSole - Backup Sistema
 color 0B
 
-:: Configuración
+:: Configuracion
 set "INSTALL_DIR=%~dp0"
 set "BACKUP_DIR=%INSTALL_DIR%backups\sistema"
 set "MAX_BACKUPS=50"
 
 echo.
-echo ════════════════════════════════════════════════════════════════
-echo   TRAZASOLE - Backup del Sistema Completo
-echo ════════════════════════════════════════════════════════════════
+echo ========================================
+echo   TRAZASOLE - Backup del Sistema
+echo ========================================
 echo.
 
 cd /d "%INSTALL_DIR%"
@@ -20,7 +19,7 @@ cd /d "%INSTALL_DIR%"
 :: Crear carpeta de backups si no existe
 if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%"
 
-:: Obtener versión del package.json
+:: Obtener version del package.json
 set VERSION=unknown
 if exist "package.json" (
     for /f "tokens=2 delims=:, " %%a in ('findstr /c:"\"version\"" package.json 2^>nul') do (
@@ -29,78 +28,74 @@ if exist "package.json" (
     )
 )
 
-:: Obtener fecha y hora
-for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value 2^>nul') do set DT=%%a
-set FECHA=%DT:~0,4%-%DT:~4,2%-%DT:~6,2%
-set HORA=%DT:~8,2%-%DT:~10,2%-%DT:~12,2%
+:: Obtener fecha y hora (metodo compatible)
+for /f "tokens=1-3 delims=/ " %%a in ('date /t') do set FECHA=%%a-%%b-%%c
+for /f "tokens=1-2 delims=: " %%a in ('time /t') do set HORA=%%a-%%b
+set FECHA=%FECHA:/=-%
+set HORA=%HORA::=-%
+
+:: Metodo alternativo si lo anterior falla
+if "%FECHA%"=="" (
+    for /f %%i in ('powershell -Command "Get-Date -Format yyyy-MM-dd"') do set FECHA=%%i
+)
+if "%HORA%"=="" (
+    for /f %%i in ('powershell -Command "Get-Date -Format HH-mm"') do set HORA=%%i
+)
+
 set TIMESTAMP=%FECHA%_%HORA%
 
 :: Nombre del backup
 set BACKUP_NAME=trazasole_v%VERSION%_%TIMESTAMP%
 set BACKUP_FILE=%BACKUP_DIR%\%BACKUP_NAME%.zip
 
-echo [INFO] Version del sistema: %VERSION%
+echo [INFO] Version: %VERSION%
 echo [INFO] Fecha: %FECHA% - Hora: %HORA%
 echo.
-echo [1/3] Creando backup del sistema...
-echo        Archivo: %BACKUP_NAME%.zip
+echo [1/3] Creando backup...
+echo       Archivo: %BACKUP_NAME%.zip
 echo.
 
-:: Crear backup excluyendo carpetas pesadas
-powershell -Command "& { ^
-    $exclude = @('backups', 'node_modules', '.next', '.git', 'servidor.log', '*.log', 'mini-services'); ^
-    $items = Get-ChildItem -Path '.' | Where-Object { $exclude -notcontains $_.Name } | ForEach-Object { $_.FullName }; ^
-    if ($items.Count -gt 0) { ^
-        Compress-Archive -Path $items -DestinationPath '%BACKUP_FILE%' -Force; ^
-        exit 0; ^
-    } else { ^
-        exit 1; ^
-    } ^
-}"
+:: Crear backup usando PowerShell (mas compatible)
+powershell -ExecutionPolicy Bypass -Command "$exclude = @('backups', 'node_modules', '.next', '.git'); $items = Get-ChildItem -Path '.' | Where-Object { $exclude -notcontains $_.Name }; if ($items) { Compress-Archive -Path $items.FullName -DestinationPath '%BACKUP_FILE%' -Force; Write-Host '[OK] Backup creado' } else { Write-Host '[ERROR] No hay archivos'; exit 1 }"
 
 if %errorlevel% neq 0 (
+    echo.
     echo [ERROR] No se pudo crear el backup
+    echo.
     pause
     exit /b 1
 )
 
+echo.
 echo [OK] Backup creado exitosamente!
 echo.
 
-:: Limpiar backups antiguos (mantener últimos 50)
-echo [2/3] Limpiando backups antiguos (manteniendo últimos %MAX_BACKUPS%)...
+:: Limpiar backups antiguos
+echo [2/3] Limpiando backups antiguos...
 
 set BACKUP_COUNT=0
 for /f %%i in ('dir "%BACKUP_DIR%\*.zip" /b 2^>nul ^| find /c /v ""') do set BACKUP_COUNT=%%i
 
+echo [INFO] Hay %BACKUP_COUNT% backups
+
 if %BACKUP_COUNT% gtr %MAX_BACKUPS% (
     set /a EXCESS=%BACKUP_COUNT%-%MAX_BACKUPS%
-    echo [INFO] Hay %BACKUP_COUNT% backups, eliminando %EXCESS% más antiguos...
+    echo [INFO] Eliminando %EXCESS% backups antiguos...
     
-    dir "%BACKUP_DIR%\*.zip" /o:d /b > "%TEMP%\backups_sistema_list.txt"
-    
-    set COUNT=0
-    for /f "usebackq delims=" %%f in ("%TEMP%\backups_sistema_list.txt") do (
-        set /a COUNT+=1
-        if !COUNT! leq %EXCESS% (
-            del "%BACKUP_DIR%\%%f" 2>nul
-            echo [ELIMINADO] %%f
-        )
+    for /f "skip=%MAX_BACKUPS% delims=" %%f in ('dir "%BACKUP_DIR%\*.zip" /o-d /b 2^>nul') do (
+        del "%BACKUP_DIR%\%%f" 2>nul
+        echo [ELIMINADO] %%f
     )
-    del "%TEMP%\backups_sistema_list.txt" 2>nul
-) else (
-    echo [OK] Hay %BACKUP_COUNT% backups, no es necesario limpiar
 )
 
-:: Resumen
 echo.
-echo [3/3] Resumen de backups disponibles:
-echo ════════════════════════════════════════════════════════════════
+echo [3/3] Backups disponibles:
+echo ----------------------------------------
 dir "%BACKUP_DIR%\*.zip" /o-d /b 2>nul | findstr /n "." | findstr "^[1-5]:"
 echo ...
-for /f %%i in ('dir "%BACKUP_DIR%\*.zip" /b 2^>nul ^| find /c /v ""') do echo Total: %%i backups en disco
-echo ════════════════════════════════════════════════════════════════
+for /f %%i in ('dir "%BACKUP_DIR%\*.zip" /b 2^>nul ^| find /c /v ""') do echo Total: %%i backups
+echo ----------------------------------------
 echo.
-echo [OK] Backup del sistema completado!
+echo [OK] Backup completado!
 echo.
 pause
