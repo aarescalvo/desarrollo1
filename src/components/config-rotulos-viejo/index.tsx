@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,16 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Switch } from '@/components/ui/switch'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import { 
   Tag, Loader2, Power, Trash2, Upload, Eye, FileText, Printer, 
   Download, Copy, Info, Variable, FileCode, Check, ChevronDown, ChevronRight,
-  Settings, Star, Play, X, Edit, Palette, Layout, Type, Square, 
-  QrCode, Save, RotateCcw, Plus, Move, Barcode as BarcodeIcon
+  Settings, Star, Play, X, Edit, Palette
 } from 'lucide-react'
 import { TipoRotulo } from '@prisma/client'
 import { Textarea } from '@/components/ui/textarea'
+import { LabelDesigner } from './LabelDesigner'
 
 interface Operador { id: string; nombre: string; rol: string }
 interface Props { operador: Operador }
@@ -56,54 +55,10 @@ const MODELOS_IMPRESORA = {
   ]
 }
 
-// Variables disponibles para editor visual
-const VARIABLES_DISPONIBLES = [
-  { id: 'NUMERO', nombre: 'Número de Animal', ejemplo: '15' },
-  { id: 'TROPA', nombre: 'Código de Tropa', ejemplo: 'B 2026 0012' },
-  { id: 'TIPO', nombre: 'Tipo de Animal', ejemplo: 'VA' },
-  { id: 'PESO', nombre: 'Peso', ejemplo: '452' },
-  { id: 'CODIGO', nombre: 'Código Completo', ejemplo: 'B20260012-015' },
-  { id: 'RAZA', nombre: 'Raza', ejemplo: 'Angus' },
-  { id: 'FECHA', nombre: 'Fecha', ejemplo: '20/03/2026' },
-  { id: 'FECHA_VENC', nombre: 'Fecha Vencimiento', ejemplo: '19/04/2026' },
-  { id: 'PRODUCTO', nombre: 'Producto', ejemplo: 'MEDIA RES' },
-  { id: 'GARRON', nombre: 'Garrón', ejemplo: '42' },
-  { id: 'LADO', nombre: 'Lado', ejemplo: 'I' },
-  { id: 'SIGLA', nombre: 'Sigla', ejemplo: 'A' },
-  { id: 'PESO_NETO', nombre: 'Peso Neto', ejemplo: '118.5' },
-  { id: 'USUARIO_FAENA', nombre: 'Usuario Faena', ejemplo: 'Juan Pérez' },
-  { id: 'MATRICULA', nombre: 'Matrícula', ejemplo: '12345' },
-  { id: 'CODIGO_BARRAS', nombre: 'Código de Barras', ejemplo: 'B202600120151' },
-  { id: 'CUIT', nombre: 'CUIT', ejemplo: '20-12345678-9' },
-  { id: 'ESTABLECIMIENTO', nombre: 'Establecimiento', ejemplo: 'FRIGORIFICO EJEMPLO' },
-  { id: 'DIAS_CONSUMO', nombre: 'Días de Consumo', ejemplo: '30' },
-]
-
 interface VariableDetectada {
   variable: string
   campo: string
   descripcion: string
-}
-
-// Elemento para editor visual
-interface RotuloElement {
-  id: string
-  tipo: 'TEXTO' | 'CODIGO_BARRAS' | 'LINEA' | 'RECTANGULO' | 'QR'
-  campo?: string
-  textoFijo?: string
-  posX: number
-  posY: number
-  ancho: number
-  alto: number
-  fuente: string
-  tamano: number
-  negrita: boolean
-  alineacion: 'LEFT' | 'CENTER' | 'RIGHT'
-  tipoCodigo?: string
-  altoCodigo?: number
-  mostrarTexto?: boolean
-  grosorLinea?: number
-  orden: number
 }
 
 interface Rotulo {
@@ -113,7 +68,6 @@ interface Rotulo {
   tipo: TipoRotulo
   categoria?: string | null
   tipoImpresora: string
-  modeloImpresora?: string | null
   ancho: number
   alto: number
   dpi: number
@@ -124,8 +78,7 @@ interface Rotulo {
   temperaturaMax?: number | null
   activo: boolean
   esDefault: boolean
-  esBinario?: boolean
-  elementos?: RotuloElement[]
+  esBinario?: boolean  // Para archivos .lbl/.nlbl
 }
 
 export function ConfigRotulosModule({ operador }: Props) {
@@ -133,6 +86,7 @@ export function ConfigRotulosModule({ operador }: Props) {
   const [loading, setLoading] = useState(true)
   const [subiendo, setSubiendo] = useState(false)
   const [modalImportar, setModalImportar] = useState(false)
+  const [modalAsignar, setModalAsignar] = useState(false)
   const [modalPreview, setModalPreview] = useState(false)
   const [modalEditar, setModalEditar] = useState(false)
   const [modalEditor, setModalEditor] = useState(false)
@@ -149,14 +103,10 @@ export function ConfigRotulosModule({ operador }: Props) {
   const [editandoNombre, setEditandoNombre] = useState('')
   const [guardando, setGuardando] = useState(false)
   
-  // Editor visual
-  const [editandoRotuloVisual, setEditandoRotuloVisual] = useState<Rotulo | null>(null)
-  const [elementosVisuales, setElementosVisuales] = useState<RotuloElement[]>([])
-  
   // Formulario de importación
   const [archivo, setArchivo] = useState<File | null>(null)
   const [contenidoArchivo, setContenidoArchivo] = useState('')
-  const [archivoBinario, setArchivoBinario] = useState<ArrayBuffer | null>(null)
+  const [archivoBinario, setArchivoBinario] = useState<ArrayBuffer | null>(null)  // Para .lbl/.nlbl
   const [esBinario, setEsBinario] = useState(false)
   const [variablesDetectadas, setVariablesDetectadas] = useState<VariableDetectada[]>([])
   const [nombre, setNombre] = useState('')
@@ -191,10 +141,6 @@ export function ConfigRotulosModule({ operador }: Props) {
     'SIGLA': 'A',
     'DIAS_CONSUMO': '30',
     'TEMP_MAX': '5°C',
-    'NUMERO': '15',
-    'TIPO': 'VA',
-    'RAZA': 'Angus',
-    'PESO_NETO': '118.5',
   }
 
   // Cargar rótulos
@@ -204,6 +150,7 @@ export function ConfigRotulosModule({ operador }: Props) {
       const response = await fetch('/api/rotulos')
       if (response.ok) {
         const data = await response.json()
+        // La API puede devolver {success, data} o directamente el array
         setRotulos(Array.isArray(data) ? data : (data.data || []))
       }
     } catch (error) {
@@ -221,10 +168,12 @@ export function ConfigRotulosModule({ operador }: Props) {
   // Procesar ZPL con datos de prueba
   const procesarZplConDatos = (contenido: string, datos: Record<string, string>): string => {
     let resultado = contenido
+    // Reemplazar variables {{VAR}}
     Object.entries(datos).forEach(([key, value]) => {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi')
       resultado = resultado.replace(regex, value)
     })
+    // Limpiar variables no reemplazadas
     resultado = resultado.replace(/\{\{[A-Z_0-9]+\}\}/g, '---')
     return resultado
   }
@@ -234,16 +183,37 @@ export function ConfigRotulosModule({ operador }: Props) {
     setRotuloSeleccionado(rotulo)
     
     if (rotulo.esBinario) {
-      setPreviewProcesado(`[ARCHIVO BINARIO - ZEBRA DESIGNER]
-      
-Archivo: ${rotulo.nombreArchivo || 'N/A'}
-Tamaño: ${rotulo.ancho}x${rotulo.alto}mm
-DPI: ${rotulo.dpi}
-Tipo: ${rotulo.tipoImpresora}
+      // Para archivos .lbl/.nlbl, mostrar información del archivo
+      setPreviewProcesado(`╔══════════════════════════════════════════════════════════════╗
+║     ARCHIVO ZEBRA DESIGNER - BINARIO                         ║
+╚══════════════════════════════════════════════════════════════╝
 
-Este archivo se enviará DIRECTAMENTE a la impresora.
-Configure la IP y use "Imprimir Prueba".`)
+📁 Archivo: ${rotulo.nombreArchivo || 'N/A'}
+📐 Tamaño: ${rotulo.ancho}x${rotulo.alto}mm
+🖨️ DPI: ${rotulo.dpi}
+📦 Tipo: ${rotulo.tipoImpresora} - ${rotulo.modeloImpresora || 'N/A'}
+
+⚠️ FORMATO PROPIETARIO (BINARIO/ENCRIPTADO)
+Este archivo se enviará DIRECTAMENTE a la impresora Zebra.
+
+═══════════════════════════════════════════════════════════════
+📋 PARA VER EL CÓDIGO ZPL:
+
+OPCIÓN 1 - Print to File:
+   1. Abra el diseño en Zebra Designer
+   2. File → Print (o Ctrl+P)
+   3. Marque "Print to file"
+   4. Guarde como .prn
+
+OPCIÓN 2 - Exportar ZPL:
+   1. Tools → Export
+   2. Seleccione formato ZPL
+
+═══════════════════════════════════════════════════════════════
+✅ Configure la IP de la impresora y use "Imprimir Prueba"
+   para enviar el archivo directamente.`)
     } else {
+      // Para archivos ZPL/DPL, procesar con datos de prueba
       const procesado = procesarZplConDatos(rotulo.contenido, datosPrueba)
       setPreviewProcesado(procesado)
     }
@@ -254,6 +224,7 @@ Configure la IP y use "Imprimir Prueba".`)
   // Imprimir prueba
   const handleImprimirPrueba = async () => {
     if (!rotuloSeleccionado) return
+    
     if (!impresoraIp) {
       toast.error('Ingrese la IP de la impresora para imprimir')
       return
@@ -288,6 +259,46 @@ Configure la IP y use "Imprimir Prueba".`)
     }
   }
 
+  // Exportar a archivo (para ver lo que imprime)
+  const handleExportarArchivo = () => {
+    if (!rotuloSeleccionado) return
+    
+    if (rotuloSeleccionado.esBinario) {
+      // Para archivos .lbl/.nlbl, decodificar base64 y exportar original
+      try {
+        const binaryString = atob(rotuloSeleccionado.contenido)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i)
+        }
+        const blob = new Blob([bytes], { type: 'application/octet-stream' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        // Usar el nombre original o generar uno
+        const nombreOriginal = rotuloSeleccionado.nombreArchivo || `${rotuloSeleccionado.nombre}.nlbl`
+        a.download = nombreOriginal
+        a.click()
+        URL.revokeObjectURL(url)
+        toast.success(`Archivo ${nombreOriginal} descargado`)
+      } catch (error) {
+        console.error('Error al exportar archivo binario:', error)
+        toast.error('Error al exportar archivo')
+      }
+    } else {
+      // Para archivos ZPL/DPL, exportar el contenido procesado
+      const ext = rotuloSeleccionado.tipoImpresora === 'DATAMAX' ? 'dpl' : 'zpl'
+      const blob = new Blob([previewProcesado], { type: 'text/plain' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `prueba_${rotuloSeleccionado.nombre.replace(/\s+/g, '_')}.${ext}`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success(`Archivo .${ext} descargado`)
+    }
+  }
+
   // Seleccionar archivo
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -301,6 +312,7 @@ Configure la IP y use "Imprimir Prueba".`)
       return
     }
 
+    // Detectar tipo de impresora por extensión
     if (extension === 'dpl') {
       setTipoImpresora('DATAMAX')
       setModeloImpresora('MARK_II')
@@ -313,23 +325,71 @@ Configure la IP y use "Imprimir Prueba".`)
 
     setArchivo(file)
     
+    // Para archivos .nlbl y .lbl, son binarios propietarios de Zebra Designer
     if (extension === 'nlbl' || extension === 'lbl') {
+      // Leer como buffer binario para enviar directo a impresora
       const buffer = await file.arrayBuffer()
       setArchivoBinario(buffer)
       setEsBinario(true)
       
+      // Intentar extraer algo de información del archivo
       const bytes = new Uint8Array(buffer)
       const sizeKB = (bytes.length / 1024).toFixed(2)
       
-      setContenidoArchivo(`[ARCHIVO ZEBRA DESIGNER - ${extension.toUpperCase()}]
+      // Buscar strings legibles en el binario (headers, etc.)
+      let infoExtra = ''
+      try {
+        const decoder = new TextDecoder('utf-8', { fatal: false })
+        const text = decoder.decode(bytes)
+        
+        // Buscar posibles campos de información
+        const labelMatch = text.match(/LabelName[^\x00]+/g)
+        const sizeMatch = text.match(/LabelSize[^\x00]+/g)
+        const dpiMatch = text.match(/DPI[^\x00]+/g)
+        
+        if (labelMatch) infoExtra += `\n📝 Nombre: ${labelMatch[0].replace('LabelName', '').replace(/\x00/g, '').trim()}`
+        if (sizeMatch) infoExtra += `\n📐 Tamaño: ${sizeMatch[0].replace('LabelSize', '').replace(/\x00/g, '').trim()}`
+        if (dpiMatch) infoExtra += `\n🖨️ DPI: ${dpiMatch[0].replace('DPI', '').replace(/\x00/g, '').trim()}`
+      } catch (e) {
+        // Ignorar errores de decode
+      }
+      
+      setContenidoArchivo(`╔══════════════════════════════════════════════════════════════╗
+║     ARCHIVO ZEBRA DESIGNER - ${extension.toUpperCase().padEnd(12)}          ║
+╚══════════════════════════════════════════════════════════════╝
 
-Archivo: ${file.name}
-Tamaño: ${sizeKB} KB
+📁 Archivo: ${file.name}
+📦 Tamaño: ${sizeKB} KB${infoExtra}
 
-Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
+⚠️ FORMATO PROPIETARIO (BINARIO/ENCRIPTADO)
+Este archivo no se puede previsualizar como texto.
+Se enviará DIRECTAMENTE a la impresora Zebra.
+
+═══════════════════════════════════════════════════════════════
+📋 PARA OBTENER EL CÓDIGO ZPL LEGIBLE:
+
+OPCIÓN 1 - Print to File:
+   1. Abra el diseño en Zebra Designer
+   2. File → Print (o Ctrl+P)
+   3. Marque "Print to file"
+   4. Guarde como .prn
+
+OPCIÓN 2 - Impresora Virtual:
+   1. Instale "Zebra Printer Driver"
+   2. Agregue una impresora Zebra virtual
+   3. Imprima a archivo desde Zebra Designer
+
+OPCIÓN 3 - Exportar desde Zebra Designer:
+   1. Tools → Export
+   2. Seleccione formato ZPL
+
+═══════════════════════════════════════════════════════════════
+✅ IMPRESIÓN DIRECTA: Configure la IP de la impresora y 
+   use "Imprimir Prueba" para enviar el archivo directamente.`)
       setVariablesDetectadas([])
       toast.info('Archivo Zebra Designer detectado. Se enviará directo a impresora.')
     } else {
+      // Archivos de texto plano (zpl, prn, dpl, txt)
       const contenido = await file.text()
       setContenidoArchivo(contenido)
       setEsBinario(false)
@@ -367,6 +427,7 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
       'PESO': { campo: 'peso', descripcion: 'Peso' },
       'PRODUCTO': { campo: 'nombreProducto', descripcion: 'Nombre del producto' },
       'ESTABLECIMIENTO': { campo: 'establecimiento', descripcion: 'Establecimiento' },
+      'NRO_ESTABLECIMIENTO': { campo: 'nroEstablecimiento', descripcion: 'N° Establecimiento' },
       'USUARIO_FAENA': { campo: 'nombreUsuarioFaena', descripcion: 'Usuario de faena' },
       'CUIT': { campo: 'cuit', descripcion: 'CUIT' },
       'MATRICULA': { campo: 'matricula', descripcion: 'Matrícula' },
@@ -375,6 +436,7 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
       'LADO': { campo: 'ladoMedia', descripcion: 'Lado (I/D)' },
       'SIGLA': { campo: 'siglaMedia', descripcion: 'Sigla' },
       'DIAS_CONSUMO': { campo: 'diasConsumo', descripcion: 'Días de consumo' },
+      'TEMP_MAX': { campo: 'temperaturaMax', descripcion: 'Temperatura máxima' },
     }
 
     encontradas.forEach(variable => {
@@ -413,6 +475,7 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
       formData.append('categoria', categoriaUso)
       formData.append('esBinario', String(esBinario))
       
+      // Si es binario, enviar el archivo original
       if (esBinario && archivoBinario) {
         const blob = new Blob([archivoBinario], { type: 'application/octet-stream' })
         formData.set('file', blob, archivo?.name || 'rotulo.lbl')
@@ -472,9 +535,10 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
     }
   }
 
-  // Establecer como default
+  // Establecer como default para una categoría
   const handleSetDefault = async (rotulo: Rotulo) => {
     try {
+      // Primero quitar default de otros de la misma categoría
       const rotulosMismaCategoria = rotulos.filter(
         r => r.categoria === rotulo.categoria && r.id !== rotulo.id && r.esDefault
       )
@@ -487,6 +551,7 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
         })
       }
       
+      // Luego establecer este como default
       const response = await fetch(`/api/rotulos/${rotulo.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -502,17 +567,42 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
     }
   }
 
-  // Copiar contenido
+  // Copiar contenido (safe para SSR)
   const handleCopiar = async (contenido: string) => {
     try {
-      await navigator.clipboard.writeText(contenido)
+      if (typeof window !== 'undefined' && navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(contenido)
+      } else {
+        // Fallback para navegadores sin clipboard API
+        const textarea = document.createElement('textarea')
+        textarea.value = contenido
+        textarea.style.position = 'fixed'
+        textarea.style.left = '-9999px'
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+      }
       toast.success('Contenido copiado al portapapeles')
     } catch (error) {
+      console.error('Error al copiar:', error)
       toast.error('No se pudo copiar al portapapeles')
     }
   }
 
-  // Editar rótulo
+  // Descargar archivo
+  const handleDescargar = (rotulo: Rotulo) => {
+    const blob = new Blob([rotulo.contenido], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const ext = rotulo.tipoImpresora === 'DATAMAX' ? 'dpl' : 'zpl'
+    a.download = `${rotulo.nombre.replace(/\s+/g, '_')}.${ext}`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // Abrir modal de edición
   const handleEditar = (rotulo: Rotulo) => {
     setRotuloSeleccionado(rotulo)
     setEditandoNombre(rotulo.nombre)
@@ -580,180 +670,6 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
     }
   }
 
-  // ========== EDITOR VISUAL ==========
-  
-  // Abrir editor visual
-  const handleAbrirEditorVisual = (rotulo?: Rotulo) => {
-    if (rotulo) {
-      setEditandoRotuloVisual(rotulo)
-      setElementosVisuales(rotulo.elementos || [])
-    } else {
-      // Nuevo rótulo
-      setEditandoRotuloVisual({
-        id: '',
-        nombre: 'Nuevo Rótulo',
-        codigo: `ROT-${Date.now()}`,
-        tipo: 'MEDIA_RES' as TipoRotulo,
-        ancho: 80,
-        alto: 50,
-        dpi: 203,
-        tipoImpresora: 'ZEBRA',
-        modeloImpresora: 'ZT410',
-        contenido: '',
-        activo: true,
-        esDefault: false,
-        elementos: []
-      })
-      setElementosVisuales([])
-    }
-    setModalEditor(true)
-  }
-
-  // Agregar elemento visual
-  const agregarElementoVisual = (tipo: RotuloElement['tipo']) => {
-    const nuevoElemento: RotuloElement = {
-      id: `el-${Date.now()}`,
-      tipo,
-      posX: 10,
-      posY: 10 + elementosVisuales.length * 30,
-      ancho: tipo === 'LINEA' ? 200 : 100,
-      alto: tipo === 'CODIGO_BARRAS' ? 60 : 30,
-      fuente: '0',
-      tamano: 10,
-      negrita: false,
-      alineacion: 'LEFT',
-      tipoCodigo: 'CODE128',
-      altoCodigo: 60,
-      mostrarTexto: true,
-      grosorLinea: 2,
-      orden: elementosVisuales.length
-    }
-    setElementosVisuales([...elementosVisuales, nuevoElemento])
-    toast.success('Elemento agregado')
-  }
-
-  // Actualizar elemento visual
-  const actualizarElementoVisual = (id: string, cambios: Partial<RotuloElement>) => {
-    setElementosVisuales(prev => prev.map(el => 
-      el.id === id ? { ...el, ...cambios } : el
-    ))
-  }
-
-  // Eliminar elemento visual
-  const eliminarElementoVisual = (id: string) => {
-    setElementosVisuales(prev => prev.filter(el => el.id !== id))
-    toast.success('Elemento eliminado')
-  }
-
-  // Generar ZPL desde elementos visuales
-  const generarZPL = (): string => {
-    if (!editandoRotuloVisual) return ''
-    
-    let zpl = '^XA\n'
-    zpl += `^PW${Math.round(editandoRotuloVisual.ancho * editandoRotuloVisual.dpi / 25.4)}\n`
-    zpl += `^LL${Math.round(editandoRotuloVisual.alto * editandoRotuloVisual.dpi / 25.4)}\n`
-    
-    for (const el of elementosVisuales.sort((a, b) => a.orden - b.orden)) {
-      switch (el.tipo) {
-        case 'TEXTO':
-          zpl += `^FO${el.posX},${el.posY}\n`
-          zpl += `^A${el.fuente}N,${el.tamano},${el.tamano}\n`
-          zpl += `^FD${el.textoFijo || `{{${el.campo}}}`}\n`
-          zpl += `^FS\n`
-          break
-        case 'CODIGO_BARRAS':
-          zpl += `^FO${el.posX},${el.posY}\n`
-          zpl += `^BY2,3,${el.altoCodigo || 60}\n`
-          zpl += `^BCN,${el.altoCodigo || 60},${el.mostrarTexto ? 'N' : 'Y'}\n`
-          zpl += `^FD${el.textoFijo || `{{${el.campo}}}`}\n`
-          zpl += `^FS\n`
-          break
-        case 'LINEA':
-          zpl += `^FO${el.posX},${el.posY}\n`
-          zpl += `^GB${el.ancho},${el.grosorLinea || 2},${el.grosorLinea || 2}^FD^FS\n`
-          break
-        case 'RECTANGULO':
-          zpl += `^FO${el.posX},${el.posY}\n`
-          zpl += `^GB${el.ancho},${el.alto},${el.grosorLinea || 2}^FD^FS\n`
-          break
-        case 'QR':
-          zpl += `^FO${el.posX},${el.posY}\n`
-          zpl += `^BQN,2,${Math.round(el.tamano / 5)}\n`
-          zpl += `^FD${el.textoFijo || `{{${el.campo}}}`}\n`
-          zpl += `^FS\n`
-          break
-      }
-    }
-    
-    zpl += '^XZ'
-    return zpl
-  }
-
-  // Generar DPL desde elementos visuales
-  const generarDPL = (): string => {
-    if (!editandoRotuloVisual) return ''
-    
-    let dpl = 'STX ESC A\n'
-    dpl += `ESC Q ${Math.round(editandoRotuloVisual.ancho * editandoRotuloVisual.dpi / 25.4)}\n`
-    dpl += `ESC q ${Math.round(editandoRotuloVisual.alto * editandoRotuloVisual.dpi / 25.4)}\n`
-    
-    for (const el of elementosVisuales.sort((a, b) => a.orden - b.orden)) {
-      switch (el.tipo) {
-        case 'TEXTO':
-          dpl += `ESC T ${el.fuente};${el.posX};${el.posY};${el.tamano};${el.tamano}\n`
-          dpl += `${el.textoFijo || `{{${el.campo}}}`}\n`
-          break
-        case 'CODIGO_BARRAS':
-          dpl += `ESC B ${el.posX};${el.posY};0;CODE128;${el.altoCodigo || 60}\n`
-          dpl += `${el.textoFijo || `{{${el.campo}}}`}\n`
-          break
-        case 'LINEA':
-          dpl += `ESC L ${el.posX};${el.posY};${el.posX + el.ancho};${el.posY};${el.grosorLinea || 2}\n`
-          break
-        case 'RECTANGULO':
-          dpl += `ESC R ${el.posX};${el.posY};${el.posX + el.ancho};${el.posY + el.alto};${el.grosorLinea || 2}\n`
-          break
-      }
-    }
-    
-    dpl += 'ETX'
-    return dpl
-  }
-
-  // Guardar rótulo visual
-  const handleGuardarRotuloVisual = async () => {
-    if (!editandoRotuloVisual) return
-    
-    const contenido = editandoRotuloVisual.tipoImpresora === 'DATAMAX' 
-      ? generarDPL() 
-      : generarZPL()
-    
-    try {
-      const body = {
-        ...editandoRotuloVisual,
-        contenido,
-        elementos: elementosVisuales
-      }
-      
-      const response = await fetch('/api/rotulos', {
-        method: editandoRotuloVisual.id ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      })
-      
-      if (response.ok) {
-        toast.success('Rótulo guardado correctamente')
-        setModalEditor(false)
-        cargarRotulos()
-      } else {
-        const error = await response.json()
-        toast.error(error.error || 'Error al guardar')
-      }
-    } catch (error) {
-      toast.error('Error al guardar rótulo')
-    }
-  }
-
   // Agrupar rótulos por categoría
   const rotulosPorCategoria = rotulos.reduce((acc, rotulo) => {
     const cat = rotulo.categoria || 'SIN_CATEGORIA'
@@ -776,7 +692,7 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
         <div className="flex items-center gap-2">
           <Button 
             variant="outline"
-            onClick={() => handleAbrirEditorVisual()}
+            onClick={() => setModalEditor(true)}
           >
             <Palette className="w-4 h-4 mr-2" />
             Editor Visual
@@ -807,8 +723,6 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
               <div className="text-xs text-blue-700">
                 <strong>Flujo de trabajo:</strong> Diseñe en Zebra Designer → Use variables como {'{{FECHA}}'}, {'{{TROPA}}'} → 
                 Importe la plantilla → Asigne a una categoría → Al imprimir se reemplazan las variables automáticamente.
-                <br />
-                <strong>Nuevo:</strong> Use el Editor Visual para crear rótulos sin Zebra Designer.
               </div>
             </div>
           </CardContent>
@@ -826,17 +740,7 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
             <CardContent className="py-12 text-center">
               <FileCode className="w-12 h-12 mx-auto text-stone-300 mb-3" />
               <p className="text-stone-500">No hay plantillas configuradas</p>
-              <p className="text-xs text-stone-400 mt-1">Importe una plantilla o use el Editor Visual</p>
-              <div className="flex gap-2 justify-center mt-4">
-                <Button onClick={() => handleAbrirEditorVisual()}>
-                  <Palette className="w-4 h-4 mr-2" />
-                  Editor Visual
-                </Button>
-                <Button variant="outline" onClick={() => setModalImportar(true)}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Importar
-                </Button>
-              </div>
+              <p className="text-xs text-stone-400 mt-1">Importe una plantilla para empezar</p>
             </CardContent>
           </Card>
         ) : (
@@ -876,6 +780,7 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
                               </p>
                               <p className="text-xs text-stone-500">
                                 {rotulo.codigo} • {rotulo.ancho}×{rotulo.alto}mm • {rotulo.dpi} DPI
+                                {rotulo.nombreArchivo && ` • ${rotulo.nombreArchivo}`}
                               </p>
                             </div>
                           </div>
@@ -884,7 +789,7 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
                               variant="ghost"
                               size="sm"
                               onClick={() => handlePreview(rotulo)}
-                              title="Vista previa"
+                              title="Vista previa con datos de prueba"
                               className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                             >
                               <Eye className="w-4 h-4" />
@@ -910,10 +815,18 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditar(rotulo)}
-                              title="Editar"
+                              title="Editar rótulo"
                               className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                             >
                               <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDescargar(rotulo)}
+                              title="Descargar archivo"
+                            >
+                              <Download className="w-4 h-4 text-stone-500" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -933,6 +846,22 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
                             </Button>
                           </div>
                         </div>
+                        
+                        {/* Variables detectadas */}
+                        {rotulo.variables && JSON.parse(rotulo.variables).length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {JSON.parse(rotulo.variables).slice(0, 8).map((v: VariableDetectada, i: number) => (
+                              <code key={i} className="text-xs bg-stone-100 px-1.5 py-0.5 rounded text-stone-600">
+                                {v.variable}
+                              </code>
+                            ))}
+                            {JSON.parse(rotulo.variables).length > 8 && (
+                              <span className="text-xs text-stone-400">
+                                +{JSON.parse(rotulo.variables).length - 8} más
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -948,12 +877,15 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
         setModalImportar(open)
         if (!open) resetForm()
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Upload className="w-5 h-5 text-amber-500" />
               Importar Plantilla
             </DialogTitle>
+            <DialogDescription>
+              Importe plantillas desde Zebra Designer o Datamax Designer
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -990,6 +922,7 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
                 <Label>Tipo de Impresora</Label>
                 <Select value={tipoImpresora} onValueChange={(v) => {
                   setTipoImpresora(v)
+                  // Cambiar al modelo default según tipo
                   if (v === 'DATAMAX') {
                     setModeloImpresora('MARK_II')
                     setDpi(203)
@@ -1020,11 +953,26 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
                   </SelectTrigger>
                   <SelectContent>
                     {MODELOS_IMPRESORA[tipoImpresora as keyof typeof MODELOS_IMPRESORA]?.map(m => (
-                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                      <SelectItem key={m.value} value={m.value}>
+                        <div className="flex flex-col">
+                          <span>{m.label}</span>
+                          <span className="text-xs text-stone-400">{m.descripcion}</span>
+                        </div>
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Info del modelo seleccionado */}
+            <div className="p-2 bg-stone-50 rounded-lg flex items-center gap-2">
+              <Info className="w-4 h-4 text-blue-500" />
+              <span className="text-xs text-stone-600">
+                {MODELOS_IMPRESORA[tipoImpresora as keyof typeof MODELOS_IMPRESORA]?.find(m => m.value === modeloImpresora)?.label || 'Seleccionar modelo'}
+                {' - '}
+                DPI detectado: {dpi}
+              </span>
             </div>
 
             {/* Categoría de uso */}
@@ -1037,7 +985,10 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
                 <SelectContent>
                   {CATEGORIAS_USO.map(c => (
                     <SelectItem key={c.value} value={c.value}>
-                      {c.label} - {c.descripcion}
+                      <div>
+                        <span>{c.label}</span>
+                        <span className="text-xs text-stone-400 ml-2">{c.descripcion}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1056,54 +1007,76 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
               </div>
               <div>
                 <Label>DPI</Label>
-                <Input type="number" value={dpi} onChange={(e) => setDpi(parseInt(e.target.value) || 203)} />
+                <Select value={String(dpi)} onValueChange={(v) => setDpi(parseInt(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="203">203 DPI</SelectItem>
+                    <SelectItem value="300">300 DPI</SelectItem>
+                    <SelectItem value="600">600 DPI</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             {/* Variables detectadas */}
             {variablesDetectadas.length > 0 && (
               <div>
-                <Label>Variables Detectadas ({variablesDetectadas.length})</Label>
-                <div className="mt-1 flex flex-wrap gap-1">
+                <Label className="flex items-center gap-2">
+                  <Variable className="w-4 h-4" />
+                  Variables Detectadas ({variablesDetectadas.length})
+                </Label>
+                <div className="mt-2 flex flex-wrap gap-1 p-2 bg-stone-50 rounded-md max-h-24 overflow-auto">
                   {variablesDetectadas.map((v, i) => (
-                    <code key={i} className="text-xs bg-stone-100 px-1.5 py-0.5 rounded text-stone-600">
-                      {v.variable} → {v.descripcion}
-                    </code>
+                    <div key={i} className="flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border">
+                      <code className="text-blue-600">{v.variable}</code>
+                      <span className="text-stone-400">→</span>
+                      <span className="text-stone-600">{v.descripcion}</span>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Contenido */}
-            {contenidoArchivo && !esBinario && (
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <Label>Contenido</Label>
-                  <Button variant="ghost" size="sm" onClick={() => setVerContenido(!verContenido)}>
-                    {verContenido ? 'Ocultar' : 'Ver'}
-                  </Button>
-                </div>
-                {verContenido && (
-                  <Textarea
-                    value={contenidoArchivo}
-                    onChange={(e) => setContenidoArchivo(e.target.value)}
-                    className="font-mono text-xs h-40"
-                  />
-                )}
-              </div>
+            {/* Ver contenido (colapsable) */}
+            {contenidoArchivo && (
+              <Collapsible open={verContenido} onOpenChange={setVerContenido}>
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-stone-500 hover:text-stone-700 w-full justify-start">
+                  {verContenido ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  Ver código de la plantilla
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <ScrollArea className="h-40 mt-2 border rounded-md bg-stone-900">
+                    <pre className="p-3 text-xs text-green-400 font-mono whitespace-pre-wrap">
+                      {contenidoArchivo}
+                    </pre>
+                  </ScrollArea>
+                </CollapsibleContent>
+              </Collapsible>
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setModalImportar(false)}>
               Cancelar
             </Button>
             <Button 
-              onClick={handleSubir}
-              disabled={subiendo || !archivo || !nombre}
+              onClick={handleSubir} 
+              disabled={subiendo || !archivo}
               className="bg-amber-500 hover:bg-amber-600"
             >
-              {subiendo ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Importar'}
+              {subiendo ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Importando...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Importar Plantilla
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1111,75 +1084,214 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
 
       {/* Modal Preview */}
       <Dialog open={modalPreview} onOpenChange={setModalPreview}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Eye className="w-5 h-5 text-amber-500" />
+              <Eye className="w-5 h-5 text-blue-500" />
               Vista Previa: {rotuloSeleccionado?.nombre}
+              {rotuloSeleccionado?.esBinario && (
+                <Badge className="bg-purple-100 text-purple-700 ml-2">Binario Zebra</Badge>
+              )}
             </DialogTitle>
+            <DialogDescription>
+              {rotuloSeleccionado?.esBinario 
+                ? `Archivo binario para impresión directa • ${rotuloSeleccionado?.ancho}×${rotuloSeleccionado?.alto}mm`
+                : `Previsualización con datos de prueba • ${rotuloSeleccionado?.ancho}×{rotuloSeleccionado?.alto}mm`
+              }
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Impresora */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>IP de la Impresora</Label>
-                <Input 
-                  value={impresoraIp} 
-                  onChange={(e) => setImpresoraIp(e.target.value)}
-                  placeholder="192.168.1.100"
-                />
+          {rotuloSeleccionado?.esBinario ? (
+            /* Vista para archivo binario */
+            <div className="space-y-4">
+              <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <FileCode className="w-5 h-5 text-purple-600" />
+                  <span className="font-medium text-purple-800">Archivo Zebra Designer (Binario)</span>
+                </div>
+                <div className="text-sm text-purple-700 space-y-1">
+                  <p>📁 <strong>Archivo:</strong> {rotuloSeleccionado.nombreArchivo || rotuloSeleccionado.nombre}</p>
+                  <p>📐 <strong>Tamaño:</strong> {rotuloSeleccionado.ancho}×{rotuloSeleccionado.alto}mm</p>
+                  <p>🖨️ <strong>DPI:</strong> {rotuloSeleccionado.dpi}</p>
+                </div>
+                <div className="mt-3 p-2 bg-amber-100 rounded text-xs text-amber-800">
+                  ⚠️ Este archivo está en formato propietario y no se puede previsualizar como texto.
+                  Se enviará directamente a la impresora Zebra.
+                </div>
               </div>
-              <div>
-                <Label>Puerto</Label>
-                <Input 
-                  value={impresoraPuerto} 
-                  onChange={(e) => setImpresoraPuerto(e.target.value)}
-                  placeholder="9100"
-                />
+
+              {/* Configuración de impresora */}
+              <div className="p-4 bg-stone-50 rounded-lg border">
+                <p className="text-sm font-medium text-stone-600 mb-3">Configuración de Impresora Zebra</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">IP de Impresora</Label>
+                    <Input
+                      value={impresoraIp}
+                      onChange={(e) => setImpresoraIp(e.target.value)}
+                      placeholder="192.168.1.100"
+                      className="h-9"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Puerto</Label>
+                    <Input
+                      value={impresoraPuerto}
+                      onChange={(e) => setImpresoraPuerto(e.target.value)}
+                      placeholder="9100"
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleExportarArchivo}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Descargar Archivo
+                </Button>
+                <Button
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  onClick={handleImprimirPrueba}
+                  disabled={imprimiendo || !impresoraIp}
+                >
+                  {imprimiendo ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Imprimiendo...
+                    </>
+                  ) : (
+                    <>
+                      <Printer className="w-4 h-4 mr-2" />
+                      Imprimir
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            /* Vista normal para archivos de texto */
+            <div className="grid grid-cols-2 gap-4">
+            {/* Panel izquierdo - Datos de prueba */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <Variable className="w-4 h-4" />
+                Datos de Prueba
+              </Label>
+              <ScrollArea className="h-[300px] border rounded-md p-3 bg-stone-50">
+                <div className="space-y-2">
+                  {Object.entries(datosPrueba).map(([key, value]) => (
+                    <div key={key} className="flex items-center gap-2 text-sm">
+                      <code className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs min-w-[100px]">
+                        {`{{${key}}}`}
+                      </code>
+                      <span className="text-stone-400">→</span>
+                      <span className="text-stone-700 font-medium">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+              
+              <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                <p className="text-xs text-amber-700">
+                  <strong>Nota:</strong> Los datos de prueba se reemplazarán por valores reales 
+                  al imprimir desde los módulos de producción (Romaneo, Pesaje, etc.)
+                </p>
               </div>
             </div>
 
-            {/* Preview */}
-            <div>
-              <Label>Código (con datos de prueba)</Label>
-              <Textarea
-                value={previewProcesado}
-                readOnly
-                className="font-mono text-xs h-64 bg-stone-50"
-              />
+            {/* Panel derecho - ZPL Procesado */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <FileCode className="w-4 h-4" />
+                  ZPL Procesado
+                </Label>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleCopiar(previewProcesado)}
+                  >
+                    <Copy className="w-4 h-4 mr-1" />
+                    Copiar
+                  </Button>
+                </div>
+              </div>
+              <ScrollArea className="h-[300px] border rounded-md bg-stone-900">
+                <pre className="p-3 text-xs text-green-400 font-mono whitespace-pre-wrap">
+                  {previewProcesado}
+                </pre>
+              </ScrollArea>
+              
+              {/* Acciones */}
+              <div className="space-y-3">
+                {/* Configuración de impresora */}
+                <div className="p-3 bg-stone-50 rounded-lg border">
+                  <p className="text-xs font-medium text-stone-600 mb-2">Configuración de Impresora</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">IP de Impresora</Label>
+                      <Input
+                        value={impresoraIp}
+                        onChange={(e) => setImpresoraIp(e.target.value)}
+                        placeholder="192.168.1.100"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Puerto</Label>
+                      <Input
+                        value={impresoraPuerto}
+                        onChange={(e) => setImpresoraPuerto(e.target.value)}
+                        placeholder="9100"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Botones de acción */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleExportarArchivo}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Exportar Archivo
+                  </Button>
+                  <Button
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={handleImprimirPrueba}
+                    disabled={imprimiendo || !impresoraIp}
+                  >
+                    {imprimiendo ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Imprimiendo...
+                      </>
+                    ) : (
+                      <>
+                        <Printer className="w-4 h-4 mr-2" />
+                        Imprimir Prueba
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
+          )}
 
-          <DialogFooter>
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setModalPreview(false)}>
               Cerrar
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => {
-                if (rotuloSeleccionado) {
-                  const blob = new Blob([previewProcesado], { type: 'text/plain' })
-                  const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  const ext = rotuloSeleccionado.tipoImpresora === 'DATAMAX' ? 'dpl' : 'zpl'
-                  a.download = `${rotuloSeleccionado.nombre.replace(/\s+/g, '_')}.${ext}`
-                  a.click()
-                  URL.revokeObjectURL(url)
-                }
-              }}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Descargar
-            </Button>
-            <Button 
-              onClick={handleImprimirPrueba}
-              disabled={imprimiendo || !impresoraIp}
-              className="bg-amber-500 hover:bg-amber-600"
-            >
-              {imprimiendo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4 mr-2" />}
-              Imprimir Prueba
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1187,66 +1299,105 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
 
       {/* Modal Editar */}
       <Dialog open={modalEditar} onOpenChange={setModalEditar}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="w-5 h-5 text-amber-500" />
               Editar Rótulo
             </DialogTitle>
+            <DialogDescription>
+              Modificá el contenido ZPL/DPL. Usá variables como {'{{TROPA}}'}, {'{{PESO}}'}, etc.
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Panel izquierdo: Editor */}
-            <div className="space-y-4">
-              <div>
-                <Label>Nombre</Label>
-                <Input value={editandoNombre} onChange={(e) => setEditandoNombre(e.target.value)} />
-              </div>
-              
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <Label>Contenido</Label>
-                  <span className="text-xs text-stone-400">Variables disponibles → click para insertar</span>
+          <div className="grid grid-cols-3 gap-4">
+            {/* Panel izquierdo - Variables disponibles */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <Variable className="w-4 h-4" />
+                Variables Disponibles
+              </Label>
+              <ScrollArea className="h-[400px] border rounded-md p-2 bg-stone-50">
+                <div className="space-y-1">
+                  {Object.entries(datosPrueba).map(([key, value]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => insertarVariable(key)}
+                      className="w-full text-left p-2 rounded hover:bg-amber-100 transition-colors group"
+                    >
+                      <code className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded group-hover:bg-amber-200">
+                        {`{{${key}}}`}
+                      </code>
+                      <span className="text-xs text-stone-500 ml-2">{value}</span>
+                    </button>
+                  ))}
                 </div>
-                <Textarea
-                  value={editandoContenido}
-                  onChange={(e) => setEditandoContenido(e.target.value)}
-                  className="font-mono text-xs h-64"
-                />
+              </ScrollArea>
+              <p className="text-xs text-stone-500">
+                Click en una variable para insertarla
+              </p>
+            </div>
+
+            {/* Panel central - Editor */}
+            <div className="col-span-2 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Nombre del Rótulo</Label>
+                  <Input 
+                    value={editandoNombre} 
+                    onChange={(e) => setEditandoNombre(e.target.value)}
+                    placeholder="Nombre descriptivo"
+                  />
+                </div>
+                <div>
+                  <Label>Tipo</Label>
+                  <Input 
+                    value={rotuloSeleccionado?.tipoImpresora === 'DATAMAX' ? 'DPL (Datamax)' : 'ZPL (Zebra)'}
+                    disabled
+                  />
+                </div>
               </div>
 
-              {/* Variables para insertar */}
               <div>
-                <Label>Insertar Variable</Label>
-                <ScrollArea className="h-32 border rounded p-2">
-                  <div className="space-y-1">
-                    {VARIABLES_DISPONIBLES.map(v => (
-                      <div
-                        key={v.id}
-                        className="flex justify-between text-xs p-1 hover:bg-stone-100 rounded cursor-pointer"
-                        onClick={() => insertarVariable(v.id)}
-                      >
-                        <code className="text-amber-600">{'{{' + v.id + '}}'}</code>
-                        <span className="text-stone-500">{v.nombre}</span>
-                      </div>
-                    ))}
-                  </div>
+                <Label className="flex items-center justify-between">
+                  <span>Contenido ZPL/DPL</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleCopiar(editandoContenido)}
+                  >
+                    <Copy className="w-3 h-3 mr-1" />
+                    Copiar
+                  </Button>
+                </Label>
+                <ScrollArea className="h-[250px] border rounded-md bg-stone-900">
+                  <textarea
+                    value={editandoContenido}
+                    onChange={(e) => setEditandoContenido(e.target.value)}
+                    className="w-full h-full p-3 text-xs text-green-400 font-mono whitespace-pre-wrap bg-transparent border-0 focus:outline-none focus:ring-0 resize-none"
+                    placeholder="Código ZPL o DPL..."
+                    spellCheck={false}
+                  />
+                </ScrollArea>
+              </div>
+
+              {/* Vista previa */}
+              <div>
+                <Label className="flex items-center gap-2">
+                  <Eye className="w-4 h-4" />
+                  Vista Previa (con datos de prueba)
+                </Label>
+                <ScrollArea className="h-[150px] border rounded-md bg-stone-800">
+                  <pre className="p-3 text-xs text-green-300 font-mono whitespace-pre-wrap">
+                    {previewEdicion}
+                  </pre>
                 </ScrollArea>
               </div>
             </div>
-
-            {/* Panel derecho: Preview */}
-            <div>
-              <Label>Vista Previa (con datos de prueba)</Label>
-              <Textarea
-                value={previewEdicion}
-                readOnly
-                className="font-mono text-xs h-96 bg-stone-50"
-              />
-            </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setModalEditar(false)}>
               Cancelar
             </Button>
@@ -1255,8 +1406,17 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
               disabled={guardando}
               className="bg-amber-500 hover:bg-amber-600"
             >
-              {guardando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-              Guardar Cambios
+              {guardando ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Guardar Cambios
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1264,242 +1424,55 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
 
       {/* Modal Editor Visual */}
       <Dialog open={modalEditor} onOpenChange={setModalEditor}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Palette className="w-5 h-5 text-amber-500" />
               Editor Visual de Rótulos
             </DialogTitle>
+            <p className="text-sm text-stone-500">
+              Diseña rótulos con drag & drop y genera código ZPL/DPL automáticamente
+            </p>
           </DialogHeader>
-
-          {editandoRotuloVisual && (
-            <div className="space-y-4">
-              {/* Configuración general */}
-              <div className="grid grid-cols-4 gap-3">
-                <div>
-                  <Label className="text-xs">Nombre</Label>
-                  <Input 
-                    value={editandoRotuloVisual.nombre}
-                    onChange={(e) => setEditandoRotuloVisual(prev => prev ? {...prev, nombre: e.target.value} : null)}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Ancho (mm)</Label>
-                  <Input 
-                    type="number"
-                    value={editandoRotuloVisual.ancho}
-                    onChange={(e) => setEditandoRotuloVisual(prev => prev ? {...prev, ancho: parseInt(e.target.value) || 80} : null)}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Alto (mm)</Label>
-                  <Input 
-                    type="number"
-                    value={editandoRotuloVisual.alto}
-                    onChange={(e) => setEditandoRotuloVisual(prev => prev ? {...prev, alto: parseInt(e.target.value) || 50} : null)}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Tipo</Label>
-                  <Select 
-                    value={editandoRotuloVisual.tipoImpresora}
-                    onValueChange={(v) => setEditandoRotuloVisual(prev => prev ? {...prev, tipoImpresora: v} : null)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ZEBRA">Zebra (ZPL)</SelectItem>
-                      <SelectItem value="DATAMAX">Datamax (DPL)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                {/* Canvas */}
-                <div className="col-span-2">
-                  <Label className="text-xs mb-2 block">Canvas (arrastre elementos para posicionar)</Label>
-                  <div 
-                    className="relative border-2 border-dashed border-stone-300 bg-white mx-auto"
-                    style={{ 
-                      width: `${Math.min(editandoRotuloVisual.ancho * 3, 400)}px`,
-                      height: `${Math.min(editandoRotuloVisual.alto * 3, 250)}px`,
-                    }}
-                  >
-                    {elementosVisuales.map((el) => (
-                      <div
-                        key={el.id}
-                        className="absolute cursor-move border border-amber-300 bg-amber-50 hover:bg-amber-100 flex items-center justify-center text-xs"
-                        style={{
-                          left: `${el.posX}px`,
-                          top: `${el.posY}px`,
-                          width: `${el.ancho}px`,
-                          height: el.tipo === 'LINEA' ? `${el.grosorLinea || 2}px` : `${el.alto}px`,
-                          fontSize: `${Math.min(el.tamano, 12)}px`,
-                          fontWeight: el.negrita ? 'bold' : 'normal',
-                        }}
-                      >
-                        {el.tipo === 'TEXTO' && (el.textoFijo || `{{${el.campo}}}`)}
-                        {el.tipo === 'CODIGO_BARRAS' && <BarcodeIcon className="w-4 h-4" />}
-                        {el.tipo === 'QR' && <QrCode className="w-4 h-4" />}
-                        {el.tipo === 'LINEA' && ''}
-                        {el.tipo === 'RECTANGULO' && '□'}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Botones para agregar elementos */}
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    <Button variant="outline" size="sm" onClick={() => agregarElementoVisual('TEXTO')}>
-                      <Type className="w-4 h-4 mr-1" /> Texto
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => agregarElementoVisual('CODIGO_BARRAS')}>
-                      <BarcodeIcon className="w-4 h-4 mr-1" /> Cód. Barras
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => agregarElementoVisual('QR')}>
-                      <QrCode className="w-4 h-4 mr-1" /> QR
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => agregarElementoVisual('LINEA')}>
-                      <Square className="w-4 h-4 mr-1" /> Línea
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => agregarElementoVisual('RECTANGULO')}>
-                      <Square className="w-4 h-4 mr-1" /> Rectángulo
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Panel de propiedades */}
-                <div className="space-y-3">
-                  <Label className="text-xs font-semibold">Elementos ({elementosVisuales.length})</Label>
-                  <ScrollArea className="h-64 border rounded p-2">
-                    <div className="space-y-2">
-                      {elementosVisuales.map((el, idx) => (
-                        <Card key={el.id} className="p-2">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium">
-                              {idx + 1}. {el.tipo}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-5 w-5 p-0"
-                              onClick={() => eliminarElementoVisual(el.id)}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-1 text-xs">
-                            <div>
-                              <span className="text-stone-400">X:</span>
-                              <Input
-                                type="number"
-                                value={el.posX}
-                                onChange={(e) => actualizarElementoVisual(el.id, { posX: parseInt(e.target.value) || 0 })}
-                                className="h-6 text-xs"
-                              />
-                            </div>
-                            <div>
-                              <span className="text-stone-400">Y:</span>
-                              <Input
-                                type="number"
-                                value={el.posY}
-                                onChange={(e) => actualizarElementoVisual(el.id, { posY: parseInt(e.target.value) || 0 })}
-                                className="h-6 text-xs"
-                              />
-                            </div>
-                          </div>
-
-                          {el.tipo === 'TEXTO' && (
-                            <div className="mt-1">
-                              <Select
-                                value={el.campo || 'TEXTO_FIJO'}
-                                onValueChange={(v) => actualizarElementoVisual(el.id, { 
-                                  campo: v === 'TEXTO_FIJO' ? undefined : v,
-                                  textoFijo: v === 'TEXTO_FIJO' ? (el.textoFijo || 'Texto') : undefined
-                                })}
-                              >
-                                <SelectTrigger className="h-6 text-xs">
-                                  <SelectValue placeholder="Variable" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="TEXTO_FIJO">Texto fijo</SelectItem>
-                                  {VARIABLES_DISPONIBLES.map(v => (
-                                    <SelectItem key={v.id} value={v.id}>{v.nombre}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              {el.textoFijo && (
-                                <Input
-                                  value={el.textoFijo}
-                                  onChange={(e) => actualizarElementoVisual(el.id, { textoFijo: e.target.value })}
-                                  className="h-6 text-xs mt-1"
-                                  placeholder="Texto fijo"
-                                />
-                              )}
-                            </div>
-                          )}
-
-                          {el.tipo === 'CODIGO_BARRAS' && (
-                            <Select
-                              value={el.campo || 'CODIGO_BARRAS'}
-                              onValueChange={(v) => actualizarElementoVisual(el.id, { campo: v })}
-                            >
-                              <SelectTrigger className="h-6 text-xs mt-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {VARIABLES_DISPONIBLES.filter(v => v.id.includes('CODIGO') || v.id.includes('GARRON')).map(v => (
-                                  <SelectItem key={v.id} value={v.id}>{v.nombre}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </Card>
-                      ))}
-                    </div>
-                  </ScrollArea>
-
-                  {/* Variables disponibles */}
-                  <div>
-                    <Label className="text-xs">Variables Disponibles</Label>
-                    <ScrollArea className="h-24 border rounded p-1">
-                      {VARIABLES_DISPONIBLES.map(v => (
-                        <div key={v.id} className="text-xs py-0.5">
-                          <code className="text-amber-600">{'{{' + v.id + '}}'}</code>
-                          <span className="text-stone-400 ml-1">- {v.nombre}</span>
-                        </div>
-                      ))}
-                    </ScrollArea>
-                  </div>
-                </div>
-              </div>
-
-              {/* Código generado */}
-              <div>
-                <Label className="text-xs">Código Generado ({editandoRotuloVisual.tipoImpresora === 'DATAMAX' ? 'DPL' : 'ZPL'})</Label>
-                <Textarea
-                  value={editandoRotuloVisual.tipoImpresora === 'DATAMAX' ? generarDPL() : generarZPL()}
-                  readOnly
-                  className="font-mono text-xs h-32 bg-stone-50"
-                />
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalEditor(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleGuardarRotuloVisual}
-              className="bg-amber-500 hover:bg-amber-600"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Guardar Rótulo
-            </Button>
-          </DialogFooter>
+          
+          <div className="py-4 overflow-auto" style={{ maxHeight: '70vh' }}>
+            <LabelDesigner
+              ancho={80}
+              alto={50}
+              dpi={203}
+              tipoImpresora="ZEBRA"
+              onGenerate={(zpl) => {
+                // Crear nuevo rótulo con el código generado
+                const nuevoRotulo = {
+                  nombre: 'Rótulo Diseñado',
+                  codigo: 'DISENO_' + Date.now(),
+                  tipo: 'PESAJE_INDIVIDUAL',
+                  tipoImpresora: 'ZEBRA',
+                  ancho: 80,
+                  alto: 50,
+                  dpi: 203,
+                  contenido: zpl,
+                  activo: true,
+                  esDefault: false
+                }
+                
+                fetch('/api/rotulos', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(nuevoRotulo)
+                }).then(res => res.json())
+                .then(data => {
+                  if (data.success || data.id) {
+                    toast.success('Rótulo creado desde editor visual')
+                    setModalEditor(false)
+                    cargarRotulos()
+                  } else {
+                    toast.error('Error al crear rótulo')
+                  }
+                })
+              }}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
