@@ -3967,3 +3967,170 @@ Stage Summary:
 - **CSS estático sin @import** ✅
 - **Clases Tailwind pre-definidas** ✅
 - **Versión 3.7.10 subida a ambos repos** ✅
+
+---
+
+## 📋 LISTADO DE FUNCIONALIDADES PERDIDAS AL VOLVER A VERSIÓN 3.7.5
+
+### Contexto
+Al intentar solucionar los errores de TailwindCSS en Windows, se hizo `git reset --hard` a la versión 3.7.5, perdiéndose todos los commits desde v3.8.0 hasta v3.8.5.
+
+### Commits Perdidos
+
+| Commit | Versión | Descripción |
+|--------|---------|-------------|
+| `de87dec` | v3.8.0 | Control de Vencimientos y Sistema FIFO |
+| `55e844a` | - | docs: Update worklog v3.8.0 |
+| `bed375e` | v3.8.1 | Historial de Actividad por Operador |
+| `6637230` | v3.8.2 | Historial de Precios de servicios y productos |
+| `817d8a1` | v3.8.3 | Expandidas variables de rótulos (100+ variables) |
+| `4884056` | - | docs: Update worklog - Sesión completa v3.8.3 |
+| `cd438dd` | - | docs: Update worklog - Verificación v3.8.3 |
+| `89a05ee` | - | fix: Add allowedDevOrigins config |
+| `5045475` | v3.8.3 | Sync version comment |
+| `8c74f7a` | v3.8.4 | Fix TailwindCSS |
+| `b951393` | v3.8.5 | Fix definitivo TailwindCSS |
+| `8731b60` | - | docs: Update worklog v3.8.5 |
+
+---
+
+### MÓDULOS PERDIDOS (detalle)
+
+#### 1. Control de Vencimientos (v3.8.0)
+**Archivos perdidos:**
+- `src/components/control-vencimientos/index.tsx` (324 líneas)
+- `src/app/api/vencimientos/route.ts` (modificado)
+
+**Funcionalidad:**
+- Monitoreo de productos por vencer y vencidos
+- Alertas configurables (3, 5, 7, 14, 30 días)
+- Tabla con medias res y empaques
+- Filtros por estado (Vencido, Crítico, Próximo)
+- Resumen con totales
+
+**Código guardado en:** `/tmp/control-vencimientos.tsx`
+
+---
+
+#### 2. Sistema FIFO (v3.8.0)
+**Archivos perdidos:**
+- `src/components/fifo/index.tsx` (390 líneas)
+- `src/app/api/fifo/route.ts` (modificado)
+
+**Funcionalidad:**
+- First In, First Out - Control de rotación de stock
+- Prioridad FIFO numerada
+- Estados: VENCIDO, URGENTE, OK, SIN_VENCIMIENTO
+- Resumen por producto
+- Búsqueda y filtros
+
+**Código guardado en:** `/tmp/fifo.tsx`
+
+---
+
+#### 3. Historial de Actividad por Operador (v3.8.1)
+**Archivos perdidos:**
+- `src/components/historial-actividad/index.tsx` (426 líneas)
+- `src/app/api/actividad-operador/route.ts` (174 líneas)
+- `src/lib/actividad.ts` (291 líneas)
+- `prisma/schema.prisma` (modelo Actividad agregado)
+
+**Funcionalidad:**
+- Registro de todas las acciones por operador
+- Tipos: LOGIN, LOGOUT, CREAR, MODIFICAR, ELIMINAR, VER, IMPRIMIR, DESPACHAR, FACTURAR, ANULAR
+- Filtros por operador, módulo, tipo y fechas
+- Estadísticas: top operadores, por módulo, por tipo
+- Auditoría completa del sistema
+
+**Código guardado en:** `/tmp/historial-actividad.tsx`
+
+---
+
+#### 4. Historial de Precios (v3.8.2)
+**Archivos perdidos:**
+- `src/components/historial-precios/index.tsx` (523 líneas)
+- `src/app/api/historial-precios/route.ts` (187 líneas)
+
+**Funcionalidad:**
+- Seguimiento de cambios de precios en servicios y productos
+- Historial por producto
+- Actualización de precios con motivo
+- Variación porcentual
+- Resumen: total productos, con cambios, sin cambios, variación promedio
+
+**Código guardado en:** `/tmp/historial-precios.tsx`
+
+---
+
+#### 5. Variables de Rótulos Expandidas (v3.8.3)
+**Archivos perdidos:**
+- `VARIABLES_SOPORTADAS.txt` (233 líneas)
+- `src/components/config-rotulos/index.tsx` (modificado)
+
+**Funcionalidad:**
+- 100+ variables disponibles para rótulos
+- Variables de tropa, animal, pesaje, fechas, códigos
+- Documentación completa de todas las variables
+
+---
+
+### APIs PERDIDAS
+
+| API | Método | Función |
+|-----|--------|---------|
+| `/api/vencimientos` | GET | Obtener productos por vencer |
+| `/api/fifo` | GET | Obtener lista FIFO |
+| `/api/actividad-operador` | GET, POST | Historial de actividad |
+| `/api/historial-precios` | GET, POST | Historial de precios |
+
+---
+
+### MODELOS PRISMA PERDIDOS
+
+**Modelo Actividad (v3.8.1):**
+```prisma
+model Actividad {
+  id          String   @id @default(cuid())
+  operadorId  String
+  tipo        String
+  modulo      String
+  descripcion String
+  entidad     String?
+  entidadId   String?
+  datos       String?
+  ip          String?
+  fecha       DateTime @default(now())
+  operador    Operador @relation(fields: [operadorId], references: [id])
+}
+```
+
+---
+
+### PEDIDOS PENDIENTES DE REIMPLEMENTACIÓN
+
+1. **Control de Vencimientos** - Módulo de alertas de productos por vencer
+2. **Sistema FIFO** - Control de rotación First In First Out
+3. **Historial de Actividad** - Auditoría por operador
+4. **Historial de Precios** - Seguimiento de precios de servicios y productos
+5. **Variables de Rótulos** - Expandir a 100+ variables
+
+---
+
+### CAUSA DEL PROBLEMA
+
+El error `Can't resolve 'tailwindcss' in 'C:\'` fue causado por:
+1. **Next.js 16** usa Turbopack por defecto
+2. **Turbopack** tiene bugs conocidos en Windows
+3. El resolver busca módulos desde `C:\` en lugar de `C:\TrazaSole`
+4. Los intentos de fix (CSS estático, PostCSS desactivado) cambiaron la visual
+5. Para restaurar la visual, se hizo reset perdiendo los avances
+
+---
+
+### ESTADO ACTUAL
+
+**Versión:** 3.7.13
+**Commit:** 0de5916
+**Visual:** Restaurada (CSS original con TailwindCSS v4)
+**Turbopack:** Activo por defecto (Next.js 16)
+**Pendiente:** Reimplementar módulos perdidos
