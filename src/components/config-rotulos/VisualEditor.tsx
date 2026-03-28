@@ -20,7 +20,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
 import { 
   Type, Barcode, QrCode, Square, Minus, Image, Trash2, 
@@ -197,24 +196,24 @@ export function VisualEditor({
   const selectedElementData = elementos.find(el => el.id === selectedElement)
 
   return (
-    <div className="flex gap-4 h-[calc(90vh-180px)]">
-      {/* Panel izquierdo: Herramientas */}
-      <div className="w-48 flex flex-col gap-4">
+    <div className="flex gap-2 h-full p-2">
+      {/* Panel izquierdo: Herramientas y Variables */}
+      <div className="w-56 flex flex-col gap-2">
         {/* Herramientas */}
-        <Card className="border-0 shadow-md">
+        <Card className="border shadow-sm">
           <CardHeader className="py-2 px-3">
-            <CardTitle className="text-sm">Herramientas</CardTitle>
+            <CardTitle className="text-sm">Agregar Elementos</CardTitle>
           </CardHeader>
-          <CardContent className="p-2 space-y-1">
+          <CardContent className="p-2 grid grid-cols-2 gap-1">
             {TIPOS_ELEMENTOS.map(t => (
               <Button
                 key={t.tipo}
                 variant="outline"
                 size="sm"
-                className="w-full justify-start"
+                className="justify-start text-xs"
                 onClick={() => agregarElemento(t.tipo)}
               >
-                <t.icon className={`w-4 h-4 mr-2 ${t.color} text-white p-0.5 rounded`} />
+                <t.icon className={`w-3 h-3 mr-1 ${t.color} text-white p-0.5 rounded`} />
                 {t.nombre}
               </Button>
             ))}
@@ -222,7 +221,7 @@ export function VisualEditor({
         </Card>
 
         {/* Zoom */}
-        <Card className="border-0 shadow-md">
+        <Card className="border shadow-sm">
           <CardContent className="p-2 flex items-center justify-between">
             <Button variant="outline" size="sm" onClick={() => setZoom(Math.max(1, zoom - 0.5))}>
               <ZoomOut className="w-4 h-4" />
@@ -234,35 +233,39 @@ export function VisualEditor({
           </CardContent>
         </Card>
 
-        {/* Variables */}
-        <Card className="border-0 shadow-md flex-1 overflow-hidden">
+        {/* Variables - Drag & Drop */}
+        <Card className="border shadow-sm flex-1 overflow-hidden">
           <CardHeader className="py-2 px-3">
-            <CardTitle className="text-sm">Variables</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <span>Variables</span>
+              <span className="text-xs text-stone-400 font-normal">(arrastrar o click)</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
-            <ScrollArea className="h-[200px]">
-              <div className="p-2 space-y-1">
-                {VARIABLES_DISPONIBLES.map(v => (
-                  <div
-                    key={v.id}
-                    className="text-xs p-1.5 hover:bg-stone-100 rounded cursor-pointer"
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('variable', v.id)
-                    }}
-                    onClick={() => {
-                      if (selectedElementData) {
-                        actualizarElemento(selectedElement, { campo: v.id, textoFijo: undefined })
-                        toast.success(`Variable {{${v.id}}} asignada`)
-                      }
-                    }}
-                  >
-                    <code className="text-amber-600 font-mono">{'{{' + v.id + '}}'}</code>
-                    <p className="text-stone-400 truncate">{v.nombre}</p>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
+          <CardContent className="p-0 overflow-auto flex-1">
+            <div className="p-2 space-y-1">
+              {VARIABLES_DISPONIBLES.map(v => (
+                <div
+                  key={v.id}
+                  className="text-xs p-2 hover:bg-amber-50 border border-transparent hover:border-amber-200 rounded cursor-grab active:cursor-grabbing transition-colors"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('variable', v.id)
+                    e.dataTransfer.effectAllowed = 'copy'
+                  }}
+                  onClick={() => {
+                    if (selectedElementData) {
+                      actualizarElemento(selectedElement, { campo: v.id, textoFijo: undefined })
+                      toast.success(`Variable {{${v.id}}} asignada`)
+                    } else {
+                      toast.info('Seleccione un elemento primero')
+                    }
+                  }}
+                >
+                  <code className="text-amber-600 font-mono font-medium">{'{{' + v.id + '}}'}</code>
+                  <p className="text-stone-500 truncate text-[11px]">{v.nombre}</p>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>

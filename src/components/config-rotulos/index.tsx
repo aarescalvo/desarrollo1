@@ -1265,31 +1265,100 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
 
       {/* Modal Editor Visual - Pantalla Completa */}
       <Dialog open={modalEditor} onOpenChange={setModalEditor}>
-        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 overflow-hidden">
+        <DialogContent className="max-w-[98vw] w-[98vw] h-[98vh] max-h-[98vh] p-0 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Editor Visual de Rótulos</DialogTitle>
+          </DialogHeader>
           <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b bg-stone-50">
+            {/* Header con configuración */}
+            <div className="flex items-center justify-between p-3 border-b bg-stone-50 gap-4">
               <div className="flex items-center gap-2">
                 <Palette className="w-5 h-5 text-amber-500" />
                 <h2 className="text-lg font-bold">Editor Visual de Rótulos</h2>
               </div>
-              <div className="flex items-center gap-2">
-                {editandoRotuloVisual && (
-                  <>
+              
+              {editandoRotuloVisual && (
+                <div className="flex items-center gap-3 flex-1 justify-end">
+                  {/* Nombre */}
+                  <div className="flex items-center gap-1">
+                    <Label className="text-xs text-stone-500">Nombre:</Label>
                     <Input 
                       value={editandoRotuloVisual.nombre}
                       onChange={(e) => setEditandoRotuloVisual(prev => prev ? {...prev, nombre: e.target.value} : null)}
-                      className="w-48"
+                      className="w-40 h-8"
                       placeholder="Nombre del rótulo"
                     />
-                    <div className="flex items-center gap-1 text-sm text-stone-500">
-                      <span>{editandoRotuloVisual.ancho}x{editandoRotuloVisual.alto}mm</span>
-                      <span className="text-stone-300">|</span>
-                      <span>{editandoRotuloVisual.tipoImpresora}</span>
-                    </div>
-                  </>
-                )}
-              </div>
+                  </div>
+                  
+                  {/* Tipo de Impresora */}
+                  <div className="flex items-center gap-1">
+                    <Label className="text-xs text-stone-500">Impresora:</Label>
+                    <Select 
+                      value={editandoRotuloVisual.tipoImpresora}
+                      onValueChange={(v) => setEditandoRotuloVisual(prev => prev ? {...prev, tipoImpresora: v} : null)}
+                    >
+                      <SelectTrigger className="w-32 h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ZEBRA">Zebra (ZPL)</SelectItem>
+                        <SelectItem value="DATAMAX">Datamax (DPL)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Modelo de Impresora */}
+                  <div className="flex items-center gap-1">
+                    <Label className="text-xs text-stone-500">Modelo:</Label>
+                    <Select 
+                      value={editandoRotuloVisual.modeloImpresora || 'ZT410'}
+                      onValueChange={(v) => {
+                        const modelo = MODELOS_IMPRESORA[editandoRotuloVisual.tipoImpresora as keyof typeof MODELOS_IMPRESORA]?.find(m => m.value === v)
+                        setEditandoRotuloVisual(prev => prev ? {...prev, modeloImpresora: v, dpi: modelo?.dpi || 203} : null)
+                      }}
+                    >
+                      <SelectTrigger className="w-36 h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MODELOS_IMPRESORA[editandoRotuloVisual.tipoImpresora as keyof typeof MODELOS_IMPRESORA]?.map(m => (
+                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Ancho */}
+                  <div className="flex items-center gap-1">
+                    <Label className="text-xs text-stone-500">Ancho:</Label>
+                    <Input 
+                      type="number"
+                      value={editandoRotuloVisual.ancho}
+                      onChange={(e) => setEditandoRotuloVisual(prev => prev ? {...prev, ancho: parseInt(e.target.value) || 80} : null)}
+                      className="w-16 h-8"
+                    />
+                    <span className="text-xs text-stone-400">mm</span>
+                  </div>
+                  
+                  {/* Alto */}
+                  <div className="flex items-center gap-1">
+                    <Label className="text-xs text-stone-500">Alto:</Label>
+                    <Input 
+                      type="number"
+                      value={editandoRotuloVisual.alto}
+                      onChange={(e) => setEditandoRotuloVisual(prev => prev ? {...prev, alto: parseInt(e.target.value) || 50} : null)}
+                      className="w-16 h-8"
+                    />
+                    <span className="text-xs text-stone-400">mm</span>
+                  </div>
+                  
+                  {/* DPI */}
+                  <div className="flex items-center gap-1">
+                    <Label className="text-xs text-stone-500">DPI:</Label>
+                    <span className="text-sm font-medium">{editandoRotuloVisual.dpi}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Contenido principal con VisualEditor */}
@@ -1308,25 +1377,33 @@ Este archivo se enviará DIRECTAMENTE a la impresora Zebra.`)
 
             {/* Footer con código generado */}
             <div className="border-t bg-stone-50">
-              <div className="flex items-center gap-2 p-2">
-                <Button variant="outline" size="sm" onClick={() => setModalEditor(false)}>
-                  Cancelar
-                </Button>
-                <Button 
-                  size="sm"
-                  onClick={handleGuardarRotuloVisual}
-                  className="bg-amber-500 hover:bg-amber-600"
-                >
-                  <Save className="w-4 h-4 mr-1" />
-                  Guardar Rótulo
-                </Button>
+              <div className="flex items-center justify-between p-2">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setModalEditor(false)}>
+                    Cancelar
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={handleGuardarRotuloVisual}
+                    className="bg-amber-500 hover:bg-amber-600"
+                  >
+                    <Save className="w-4 h-4 mr-1" />
+                    Guardar Rótulo
+                  </Button>
+                </div>
+                
+                {editandoRotuloVisual && (
+                  <div className="text-xs text-stone-500">
+                    {editandoRotuloVisual.tipoImpresora} • {editandoRotuloVisual.ancho}x{editandoRotuloVisual.alto}mm • {elementosVisuales.length} elementos
+                  </div>
+                )}
               </div>
               {editandoRotuloVisual && (
                 <div className="px-2 pb-2">
                   <Textarea
                     value={editandoRotuloVisual.tipoImpresora === 'DATAMAX' ? generarDPL() : generarZPL()}
                     readOnly
-                    className="font-mono text-xs h-20 bg-stone-100"
+                    className="font-mono text-xs h-16 bg-stone-100"
                     placeholder="Código generado..."
                   />
                 </div>
