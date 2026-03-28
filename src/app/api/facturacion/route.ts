@@ -201,7 +201,10 @@ export async function POST(request: NextRequest) {
       const tipoServicio = d.tipoServicioId 
         ? await db.tipoServicio.findUnique({ where: { id: d.tipoServicioId } })
         : null
-      const porcentajeIva = d.porcentajeIva || tipoServicio?.porcentajeIva || 21
+      // Usar ?? en lugar de || para respetar el valor 0
+      const porcentajeIva = d.porcentajeIva !== undefined 
+        ? Number(d.porcentajeIva) 
+        : (tipoServicio?.porcentajeIva ?? 21)
       const ivaDetalle = subtotalDetalle * (porcentajeIva / 100)
       totalIva += ivaDetalle
       
