@@ -4134,3 +4134,80 @@ El error `Can't resolve 'tailwindcss' in 'C:\'` fue causado por:
 **Visual:** Restaurada (CSS original con TailwindCSS v4)
 **Turbopack:** Activo por defecto (Next.js 16)
 **Pendiente:** Reimplementar módulos perdidos
+
+---
+Task ID: 1600
+Agent: main
+Task: Crear scripts de backup con version y fecha, mantener ultimos 50 backups
+
+Work Log:
+
+#### 1. Scripts de Backup Creados/Actualizados
+
+**backup-sistema.bat** (Raiz del proyecto):
+- Backup completo del sistema (codigo, configuracion, prisma)
+- Nombre: `trazasole_v{VERSION}_{FECHA}_{HORA}.zip`
+- Lee version automaticamente del package.json
+- Excluye: node_modules, .next, .git, backups, logs
+- Mantiene los ultimos 50 backups automaticamente
+- Limpieza de backups antiguos automatica
+
+**backup-database.bat** (Raiz del proyecto):
+- Backup de base de datos con deteccion automatica
+- Detecta SQLite o PostgreSQL segun configuracion
+- Nombre: `db_v{VERSION}_{FECHA}_{HORA}.zip`
+- Para PostgreSQL: parsea DATABASE_URL del .env
+- Busca pg_dump en multiples rutas de PostgreSQL (14, 15, 16)
+- Comprime el backup en ZIP
+- Mantiene los ultimos 50 backups automaticamente
+
+**pc-produccion/8-backup-sistema.bat**:
+- Igual que backup-sistema.bat pero con ruta relativa correcta
+
+**pc-produccion/9-backup-base-datos.bat**:
+- Igual que backup-database.bat pero con ruta relativa correcta
+
+#### 2. Sincronizacion de Repositorios
+- **desarrollo1**: v3.7.15 ✓
+- **produccion1**: v3.7.15 ✓ (actualizado)
+- Ambos repositorios sincronizados
+
+#### 3. Documentacion Creada
+
+**ACTUALIZAR-SISTEMA.md**:
+- Comandos PowerShell para actualizar
+- Opciones: rapida, completo, usando .bat
+- Informacion de repositorios
+- Scripts de backup disponibles
+
+**PLAN-CONTINUACION.md**:
+- Analisis de problemas anteriores (TailwindCSS v4, Turbopack)
+- Reglas de trabajo para evitar problemas
+- Flujo de trabajo seguro
+- Modulos pendientes priorizados
+- Procedimiento para cada modulo
+
+#### 4. Reglas Establecidas
+
+**NO modificar sin autorizacion:**
+- src/app/globals.css
+- tailwind.config.ts
+- postcss.config.mjs
+- next.config.ts
+
+**Flujo seguro:**
+1. Hacer backup
+2. Implementar modulo
+3. Probar en desarrollo
+4. Si hay errores CSS/Tailwind → NO cambiar config
+5. Commit con version incremental
+6. Push a desarrollo1 primero
+7. Si funciona → Push a produccion1
+
+Stage Summary:
+- **Scripts de backup mejorados** ✅
+- **Deteccion automatica de tipo de BD** ✅
+- **Ultimos 50 backups automaticos** ✅
+- **Ambos repositorios sincronizados v3.7.15** ✅
+- **Documentacion de comandos y plan creada** ✅
+- **Version estable marcada: 3.7.15** ✅
