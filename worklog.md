@@ -4211,3 +4211,155 @@ Stage Summary:
 - **Ambos repositorios sincronizados v3.7.15** ✅
 - **Documentacion de comandos y plan creada** ✅
 - **Version estable marcada: 3.7.15** ✅
+
+---
+Task ID: 1568
+Agent: main
+Task: Crear todos los módulos pendientes del sistema
+
+Work Log:
+
+#### 1. Análisis del Proyecto
+- Revisado worklog.md - Versión actual: 3.7.15
+- Revisado PLAN-CONTINUACION.md - Módulos pendientes identificados
+- Revisado page.tsx - Módulos existentes verificados
+- Revisado schema.prisma - Modelos disponibles
+
+#### 2. Módulos Creados en src/modules-pending/
+
+**ALTA PRIORIDAD (2 módulos):**
+1. **rotulos-mejoras/** - Editor visual avanzado para etiquetas ZPL/DPL
+   - index.tsx, types.ts, api.ts, README.md
+   - Editor drag & drop, soporte Zebra/Datamax
+   - Variables dinámicas, vista previa en tiempo real
+
+2. **auditoria-operador/** - Sistema completo de auditoría
+   - index.tsx, types.ts, api.ts, README.md
+   - Historial con filtros, estadísticas por operador
+   - Exportación CSV, detalle con datos antes/después
+
+**MEDIA PRIORIDAD (5 módulos):**
+3. **historial-precios/** - Gestión y seguimiento de precios
+   - index.tsx, types.ts, api.ts, README.md
+   - Registro de cambios, variación automática
+   - Soporte multi-moneda, análisis de tendencias
+
+4. **reportes-gerenciales/** - Panel de indicadores clave
+   - index.tsx, README.md
+   - KPIs de faena, rinde, stock, ingresos
+   - Gráficos de tendencias, exportación
+
+5. **dashboard-ejecutivo/** - Panel para supervisores
+   - index.tsx, README.md
+   - KPIs en tiempo real, alertas
+   - Solo visible para ADMINISTRADOR
+
+6. **control-vencimientos/** - Control FIFO y alertas
+   - index.tsx, README.md
+   - Alertas por niveles, filtrado por urgencia
+   - Sugerencias de despacho FIFO
+
+7. **alertas-stock/** - Alertas automáticas de stock
+   - index.tsx, README.md
+   - Alertas configurables, niveles BAJO/CRÍTICO
+   - Notificaciones automáticas
+
+**BAJA PRIORIDAD (3 módulos):**
+8. **sincronizacion-sigica/** - Integración con SENASA
+   - index.tsx, README.md
+   - Verificación de conexión, envío automático
+   - Historial de sincronizaciones
+
+9. **integracion-afip/** - Facturación electrónica
+   - index.tsx, README.md
+   - Configuración de certificado digital
+   - Facturación electrónica, obtención de CAE
+
+10. **predictivo-stock/** - Predicción de stock
+    - index.tsx, README.md
+    - Análisis de consumo promedio
+    - Predicción de días de cobertura, sugerencias de compra
+
+#### 3. Archivo de Índice
+- Creado `src/modules-pending/INDEX.md`
+- Lista completa de todos los módulos
+- Prioridad de cada uno
+- Estado de creación
+- Instrucciones de implementación
+
+#### 4. Estructura de Cada Módulo
+```
+nombre-modulo/
+├── index.tsx      # Componente principal React
+├── types.ts       # Tipos TypeScript (opcional)
+├── api.ts         # Funciones de API (opcional)
+└── README.md      # Documentación del módulo
+```
+
+#### 5. Características Implementadas
+- Todos los módulos son autocontenidos
+- No modifican archivos existentes del sistema
+- Listos para implementar siguiendo instrucciones del README
+- Código limpio y bien documentado
+- UI consistente con el sistema actual
+
+Stage Summary:
+- **10 módulos pendientes creados** ✅
+- **2 de ALTA prioridad** ✅
+- **5 de MEDIA prioridad** ✅
+- **3 de BAJA prioridad** ✅
+- **INDEX.md creado con instrucciones** ✅
+- **Versión actualizada a 3.7.17** ✅
+- **Pendiente: lint y push a GitHub**
+
+---
+Task ID: 1601
+Agent: main
+Task: Implementar modulo de rotulos mejorado con editor visual
+
+Work Log:
+
+#### 1. Backup de Version Anterior
+- Creado `src/components/config-rotulos-viejo/` con todos los archivos anteriores
+- Preservados: index.tsx, LabelDesigner.tsx, editor-drag-drop.tsx, importador-zpl.tsx, preview-zpl.tsx
+
+#### 2. Nuevo Modulo Implementado
+**Archivo:** `src/components/config-rotulos/index.tsx`
+
+**Funcionalidades principales:**
+- Importar plantillas ZPL/DPL/NLBL desde archivos
+- Editor visual drag & drop para crear rótulos
+- Panel de propiedades para cada elemento
+- Vista previa en tiempo real con datos de prueba
+- Generación automática de ZPL y DPL
+- Impresión directa a impresoras Zebra/Datamax por IP
+
+**Elementos soportados:**
+- Texto (fijo o variable)
+- Codigo de barras (CODE128)
+- Codigo QR
+- Lineas y rectangulos
+
+**Variables disponibles (20):**
+- NUMERO, TROPA, TIPO, PESO, CODIGO, RAZA
+- FECHA, FECHA_VENC, PRODUCTO, GARRON, LADO, SIGLA
+- PESO_NETO, USUARIO_FAENA, MATRICULA, CODIGO_BARRAS
+- CUIT, ESTABLECIMIENTO, DIAS_CONSUMO, etc.
+
+#### 3. Estructura del Modulo
+```
+src/components/config-rotulos/
+├── index.tsx          # Modulo principal (unificado)
+└── (viejo/)           # Backup en config-rotulos-viejo/
+```
+
+#### 4. Modelos Utilizados
+- Rotulo (Prisma) - Plantillas de rotulos
+- Campos: id, nombre, codigo, tipo, ancho, alto, dpi, contenido, elementos, etc.
+
+Stage Summary:
+- **Backup de version anterior creado** ✅
+- **Editor visual implementado** ✅
+- **Generacion ZPL/DPL automatica** ✅
+- **Version actualizada a 3.7.17** ✅
+- **Push a desarrollo1 completado** ✅
