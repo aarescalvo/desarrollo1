@@ -4428,3 +4428,27 @@ Stage Summary:
 - **Canvas mas grande con zoom** ✅
 - **Version actualizada a 3.7.18** ✅
 - **Push a ambos repositorios** ✅
+
+---
+Task ID: editor-visual-fix
+Agent: main
+Task: Corrección del editor visual de rótulos - drag and drop funcional
+
+Work Log:
+- Importado VisualEditor.tsx con dnd-kit en index.tsx
+- Eliminada definición local de RotuloElement (ahora viene de VisualEditor)
+- Modal del editor visual cambiado a pantalla completa (95vw x 95vh)
+- Integrado VisualEditor con drag and drop usando @dnd-kit
+- Agregado soporte para tipo IMAGEN en agregarElementoVisual
+- Agregados casos IMAGEN en generarZPL y generarDPL
+- Corregido warning de alt en SortableElement.tsx
+- Commiteado como v3.7.19 y empujado a GitHub
+
+Stage Summary:
+- Editor visual ahora ocupa pantalla completa
+- Drag and drop funcional con @dnd-kit/core
+- Soporte completo para imágenes (carga, preview, eliminación)
+- Botones de eliminar elementos en panel de propiedades y sobre elemento seleccionado
+- Zoom para trabajar con precisión
+- Generación de código ZPL/DPL actualizada para incluir imágenes y QR
+
