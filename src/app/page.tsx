@@ -218,6 +218,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Configuración',
     icon: Settings,
     items: [
+      { id: 'configuracion', label: 'Sistema', icon: Settings, permiso: 'puedeConfiguracion' },
       { id: 'configRotulos', label: 'Rótulos', icon: Tag, permiso: 'puedeConfiguracion' },
       { id: 'configInsumos', label: 'Insumos', icon: Package, permiso: 'puedeConfiguracion' },
       { id: 'configUsuarios', label: 'Usuarios', icon: Users, permiso: 'puedeConfiguracion' },
