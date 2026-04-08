@@ -8,22 +8,44 @@
  */
 
 import { db } from '../src/lib/db'
+import fs from 'fs'
+import path from 'path'
 
 async function main() {
   console.log('🔄 Creando rótulo MEDIA RES para Zebra ZT230...')
+
+  // Leer logos GRF
+  const logosDir = path.join(process.cwd(), 'public', 'logos')
+  
+  let logoSolemarGrf = ''
+  let logoSenasaGrf = ''
+  
+  try {
+    logoSolemarGrf = fs.readFileSync(path.join(logosDir, 'logo-solemar.grf'), 'utf-8').trim()
+    console.log('   Logo Solemar cargado')
+  } catch (e) {
+    console.log('   ⚠️ Logo Solemar no encontrado, usando placeholder')
+    logoSolemarGrf = '100,100,10,' + '0'.repeat(200)
+  }
+  
+  try {
+    logoSenasaGrf = fs.readFileSync(path.join(logosDir, 'logo-senasa.grf'), 'utf-8').trim()
+    console.log('   Logo SENASA cargado')
+  } catch (e) {
+    console.log('   ⚠️ Logo SENASA no encontrado, usando placeholder')
+    logoSenasaGrf = '100,100,10,' + '0'.repeat(200)
+  }
 
   // Verificar si ya existe
   const existente = await db.rotulo.findFirst({
     where: { tipo: 'MEDIA_RES' }
   })
 
-  // ZPL Template - se procesarán las variables {VAR}
-  const templateZPL = crearTemplateZPL()
+  // ZPL Template con logos embebidos
+  const templateZPL = crearTemplateZPL(logoSolemarGrf, logoSenasaGrf)
 
   // Variables disponibles en el template
   const variables = JSON.stringify([
-    { nombre: 'LOGO_SOLEMAR', descripcion: 'Logo de Solemar en formato GRF' },
-    { nombre: 'LOGO_SENASA', descripcion: 'Logo de SENASA en formato GRF' },
     { nombre: 'NOMBRE_CLIENTE', descripcion: 'Nombre del titular de faena' },
     { nombre: 'CUIT_CLIENTE', descripcion: 'CUIT del cliente' },
     { nombre: 'MATRICULA_CLIENTE', descripcion: 'Matrícula del cliente' },
@@ -58,7 +80,7 @@ async function main() {
         activo: true
       }
     })
-    console.log('✅ Rótulo actualizado')
+    console.log('✅ Rótulo actualizado con logos')
   } else {
     await db.rotulo.create({
       data: {
@@ -78,73 +100,71 @@ async function main() {
         activo: true
       }
     })
-    console.log('✅ Rótulo creado')
+    console.log('✅ Rótulo creado con logos')
   }
 }
 
-function crearTemplateZPL(): string {
+function crearTemplateZPL(logoSolemar: string, logoSenasa: string): string {
   // ZPL para Zebra ZT230 - 203 DPI
   // Tamaño: 100mm (4 pulgadas) ancho, alto variable
-  // Los logos se cargarán dinámicamente desde public/logos/
 
   return `^XA
 ^FX Configuracion de etiqueta - TrazaSole v3.7.24
 ^CI28
 ^PW800
-^LL1200
-^FO0,20
+^LL1150
 
 ^FX ============ ENCABEZADO - LOGO SOLEMAR ============
-^FO280,30^GFA,200,200,10,{LOGO_SOLEMAR}
-^FO100,90^A0N,28,28^FDESTABLECIMIENTO FAENADOR SOLEMAR ALIMENTARIA S.A^FS
-^FO240,125^A0N,26,26^FDEST. OFICIAL N 3986^FS
-^FO260,160^A0N,24,24^FDCUIT: 30-70919450-6^FS
-^FO245,195^A0N,24,24^FDMATRICULA N: 300^FS
-^FO95,230^A0N,22,22^FDRUTA NAC. N 22, KM 1043 - CHIMPAY - RIO NEGRO^FS
+^FO260,15^GFA,${logoSolemar}
+^FO40,100^A0N,28,28^FDESTABLECIMIENTO FAENADOR SOLEMAR ALIMENTARIA S.A^FS
+^FO200,135^A0N,26,26^FDEST. OFICIAL N 3986^FS
+^FO230,170^A0N,24,24^FDCUIT: 30-70919450-6^FS
+^FO210,205^A0N,24,24^FDMATRICULA N: 300^FS
+^FO50,240^A0N,22,22^FDRUTA NAC. N 22, KM 1043 - CHIMPAY - RIO NEGRO^FS
 
 ^FX ============ LINEA SEPARADORA ============
-^FO50,270^GB700,3,3^FS
+^FO30,280^GB740,3,3^FS
 
 ^FX ============ DATOS DEL CLIENTE ============
-^FO80,290^A0N,24,24^FDTITULAR DE FAENA: {NOMBRE_CLIENTE}^FS
-^FO80,320^A0N,24,24^FDCUIT N: {CUIT_CLIENTE}^FS
-^FO80,350^A0N,24,24^FDMATRICULA N: {MATRICULA_CLIENTE}^FS
+^FO50,300^A0N,26,26^FDTITULAR DE FAENA: {NOMBRE_CLIENTE}^FS
+^FO50,335^A0N,26,26^FDCUIT N: {CUIT_CLIENTE}^FS
+^FO50,370^A0N,26,26^FDMATRICULA N: {MATRICULA_CLIENTE}^FS
 
 ^FX ============ LINEA SEPARADORA ============
-^FO50,385^GB700,3,3^FS
+^FO30,410^GB740,3,3^FS
 
 ^FX ============ TIPO DE PRODUCTO ============
-^FO180,410^A0N,28,28^FDCARNE VACUNA CON HUESO ENFRIADA^FS
+^FO150,435^A0N,30,30^FDCARNE VACUNA CON HUESO ENFRIADA^FS
 
 ^FX ============ LOGO SENASA CON LEYENDA ============
-^FO80,460^GFA,150,150,10,{LOGO_SENASA}
-^FO220,480^A0N,22,22^FDSENASA N 3986/141334/1^FS
-^FO220,510^A0N,22,22^FDINDUSTRIA ARGENTINA^FS
+^FO60,480^GFA,${logoSenasa}
+^FO160,495^A0N,24,24^FDSENASA N 3986/141334/1^FS
+^FO160,525^A0N,24,24^FDINDUSTRIA ARGENTINA^FS
 
 ^FX ============ MEDIA RES DESTACADO ============
-^FO200,560^GB400,60,40^FS
-^FO240,575^A0N,45,45^FDMEDIA RES^FS
+^FO150,580^GB500,70,50^FS
+^FO230,598^A0N,50,50^FDMEDIA RES^FS
 
 ^FX ============ LINEA SEPARADORA ============
-^FO50,650^GB700,3,3^FS
+^FO30,680^GB740,3,3^FS
 
 ^FX ============ DATOS VARIABLES ============
-^FO80,680^A0N,26,26^FDFECHA FAENA: {FECHA_FAENA}^FS
-^FO450,680^A0N,26,26^FDTROPA N: {TROPA}^FS
-^FO80,720^A0N,26,26^FDGARRON N: {GARRON} {LADO}^FS
-^FO450,720^A0N,26,26^FDCLASIF: {CLASIFICACION}^FS
-^FO80,760^A0N,28,28^FDVENTA AL PESO: {KG} KG^FS
+^FO50,710^A0N,28,28^FDFECHA FAENA: {FECHA_FAENA}^FS
+^FO420,710^A0N,28,28^FDTROPA N: {TROPA}^FS
+^FO50,750^A0N,28,28^FDGARRON N: {GARRON} {LADO}^FS
+^FO420,750^A0N,28,28^FDCLASIF: {CLASIFICACION}^FS
+^FO50,790^A0N,30,30^FDVENTA AL PESO: {KG} KG^FS
 
 ^FX ============ MENSAJES INFORMATIVOS ============
-^FO150,820^A0N,24,24^FDMANTENER REFRIGERADO A MENOS DE 5C^FS
-^FO100,860^A0N,24,24^FDCONSUMIR PREFERENTEMENTE ANTES DEL DIA: {VENCIMIENTO}^FS
+^FO100,850^A0N,26,26^FDMANTENER REFRIGERADO A MENOS DE 5C^FS
+^FO50,890^A0N,26,26^FDCONSUMIR PREFERENTEMENTE ANTES DEL DIA: {VENCIMIENTO}^FS
 
 ^FX ============ LINEA SEPARADORA ============
-^FO50,900^GB700,3,3^FS
+^FO30,930^GB740,3,3^FS
 
 ^FX ============ CODIGO DE BARRAS ============
-^FO180,930^BY3,3,80^BCN,80,N,N,N^FD{CODIGO_BARRAS}^FS
-^FO200,1020^A0N,24,24^FD{CODIGO_BARRAS}^FS
+^FO150,955^BY3,3,80^BCN,80,N,N,N^FD{CODIGO_BARRAS}^FS
+^FO180,1045^A0N,26,26^FD{CODIGO_BARRAS}^FS
 
 ^FX Fin de etiqueta
 ^XZ`
