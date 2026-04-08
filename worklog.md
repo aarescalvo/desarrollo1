@@ -3441,3 +3441,58 @@ Stage Summary:
 
 ### Versión actual: **3.7.24**
 
+
+---
+Task ID: 1603
+Agent: main
+Task: Crear plantilla Excel para carga de datos TrazaSole v3.7.24
+
+Work Log:
+
+#### 1. Análisis del Schema Prisma
+- Revisados todos los modelos del sistema
+- Identificadas entidades necesarias para carga inicial
+- Determinadas relaciones y campos obligatorios
+
+#### 2. Estructura de la Plantilla
+**Archivo:** `upload/PLANTILLA_CARGA_DATOS_TRAZASOLE_v3.7.24.xlsx`
+
+**Hojas creadas (12):**
+1. **INSTRUCCIONES** - Guía de uso completa
+2. **CONFIGURACION** - Datos del establecimiento (nombre, CUIT, N° establecimiento, etc.)
+3. **CLIENTES** - Productores y usuarios de faena (16 campos)
+4. **OPERADORES** - Usuarios del sistema con permisos (19 campos)
+5. **TRANSPORTISTAS** - Empresas de transporte (4 campos)
+6. **CORRALES** - Corrales disponibles (4 campos)
+7. **CAMARAS** - Cámaras frigoríficas (5 campos)
+8. **TIPIFICADORES** - Personal de tipificación (5 campos)
+9. **TIPOS_MENUDENCIA** - Clasificación de menudencias (3 campos)
+10. **PRODUCTOS** - Catálogo de productos (16 campos)
+11. **INSUMOS** - Insumos del sistema (16 campos)
+12. **PRECIOS_SERVICIO** - Precios por cliente (7 campos)
+
+#### 3. Características de la Plantilla
+- Estilo profesional con encabezados oscuros
+- Campos de entrada en azul (input del usuario)
+- Filas alternadas con fondo gris
+- Bordes definidos para mejor legibilidad
+- Notas explicativas en hojas complejas
+- Orden lógico de carga (configuración → operadores → clientes → etc.)
+
+#### 4. Campos Incluidos por Entidad
+
+**CLIENTES:** nombre, dni, cuit, matricula, direccion, localidad, provincia, telefono, telefonoAlt, email, razonSocial, condicionIva, puntoVenta, esProductor, esUsuarioFaena, observaciones
+
+**OPERADORES:** nombre, usuario, password, pin, rol, email, activo + 12 permisos individuales
+
+**PRODUCTOS:** codigo, nombre, especie, codigos EAN-128, tara, diasConservacion, tipoRotulo, precio, etc.
+
+**INSUMOS:** codigo, nombre, categoria, subcategoria, unidadMedida, stock, proveedor, precio, ubicacion, etc.
+
+Stage Summary:
+- **Plantilla Excel creada** ✅
+- **12 hojas con estructura completa** ✅
+- **Campos alineados con schema Prisma** ✅
+- **Instrucciones de uso incluidas** ✅
+- **Archivo: upload/PLANTILLA_CARGA_DATOS_TRAZASOLE_v3.7.24.xlsx** ✅
+
