@@ -1263,6 +1263,87 @@ Stage Summary:
 - **Versión 3.7.24** ✅
 
 ---
+Task ID: 1604
+Agent: main
+Task: Crear rótulo de Media Res para Zebra ZT230 con logos y código de barras
+
+Work Log:
+
+#### 1. Template ZPL Creado
+**Archivo:** `prisma/seed-rotulo-media-res.ts`
+- Impresora: Zebra ZT230 (203 DPI)
+- Tamaño: 100mm × 150mm (papel continuo)
+- Formato: ZPL II
+
+#### 2. Estructura del Rótulo
+```
+┌─────────────────────────────────────────┐
+│ [LOGO SOLEMAR]                          │
+│ ESTABLECIMIENTO FAENADOR SOLEMAR...     │
+│ CUIT: 30-70919450-6                     │
+│ MATRICULA N°: 300                       │
+│ RUTA NAC. N° 22, KM 1043...            │
+│─────────────────────────────────────────│
+│ TITULAR DE FAENA: {NOMBRE_CLIENTE}      │
+│ CUIT N°: {CUIT_CLIENTE}                 │
+│ MATRICULA N°: {MATRICULA_CLIENTE}       │
+│─────────────────────────────────────────│
+│ CARNE VACUNA CON HUESO ENFRIADA         │
+│ [LOGO SENASA] SENASA N° 3986/141334/1   │
+│               INDUSTRIA ARGENTINA       │
+│         ╔══ MEDIA RES ══╗               │
+│─────────────────────────────────────────│
+│ FECHA FAENA: {FECHA}  TROPA N°: {TROPA} │
+│ GARRON N°: {GARRON} {LADO} CLASIF: {A/T/D}│
+│ VENTA AL PESO: {KG} KG                  │
+│ MANTENER REFRIGERADO A MENOS DE 5°C     │
+│ CONSUMIR PREFERENTEMENTE... {VENC.}     │
+│─────────────────────────────────────────│
+│ |||||||||||||||||||||| (Código 128)     │
+│ TROPA-GARRON-LADO-CLASIF                │
+└─────────────────────────────────────────┘
+```
+
+#### 3. Lógica de Impresión (3 rótulos por media)
+| Media | Rótulos | Lado |
+|-------|---------|------|
+| Derecha | A, T, D | DER |
+| Izquierda | A, T, D | IZQ |
+
+Total: 6 rótulos por animal
+
+#### 4. Variables del Template
+- `{LOGO_SOLEMAR}` - Logo en formato GRF
+- `{LOGO_SENASA}` - Logo en formato GRF
+- `{NOMBRE_CLIENTE}` - Titular de faena
+- `{CUIT_CLIENTE}` - CUIT del cliente
+- `{MATRICULA_CLIENTE}` - Matrícula
+- `{FECHA_FAENA}` - Fecha de faena
+- `{TROPA}` - Número de tropa
+- `{GARRON}` - Número de garrón
+- `{LADO}` - DER o IZQ
+- `{CLASIFICACION}` - A, T o D
+- `{KG}` - Peso en kilogramos
+- `{VENCIMIENTO}` - Fecha faena + 13 días
+- `{CODIGO_BARRAS}` - TROPA-GARRON-LADO-CLASIF
+
+#### 5. API Creada
+`/api/rotulos/imprimir-media-res` - Imprime 3 rótulos por media
+
+#### 6. Carpeta para Logos
+`public/logos/` - Guardar logo-solemar.png y logo-senasa.png
+
+#### 7. Script de Conversión
+`scripts/convertir-logo.ts` - Convierte PNG a formato GRF para ZPL
+
+Stage Summary:
+- **Template ZPL completo creado** ✅
+- **API para imprimir 3 rótulos por media** ✅
+- **Carpeta public/logos/ creada** ✅
+- **Script de conversión de logos** ✅
+- **Pendiente: Subir logos del usuario**
+
+---
 Task ID: 1570
 Agent: main
 Task: Implementar módulo completo de facturación para TrazaSole
