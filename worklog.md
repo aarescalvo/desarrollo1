@@ -1,4 +1,59 @@
 ---
+Task ID: 1600
+Agent: main
+Task: Implementar impresión de rótulos para pesaje individual con Datamax Mark II
+
+Work Log:
+
+#### 1. Rótulo DPL Creado
+**Archivo:** `scripts/seed-rotulo-pesaje.ts`
+- Tipo: PESAJE_INDIVIDUAL
+- Impresora: Datamax Mark II (DPL)
+- Tamaño: 10cm x 5cm (203 DPI)
+- Variables: {TROPA}, {NUMERO}, {PESO}
+
+**Contenido DPL:**
+```
+<STX>L
+T50,30,3,30,25,N,"TROPA:"
+T180,30,3,30,25,N,"{TROPA}"
+T280,120,5,60,50,N,"{NUMERO}"
+T50,300,3,30,25,N,"PESO:"
+T200,300,3,30,25,N,"{PESO} KG"
+<ETX>
+```
+
+#### 2. Componente Actualizado
+**Archivo:** `src/components/pesaje-individual-module.tsx`
+- Agregado estado para IP de impresora (guardada en localStorage)
+- Agregado diálogo de configuración de impresora
+- Agregado botón flotante de impresora (icono Printer)
+  - Rojo si no hay IP configurada
+  - Blanco si ya está configurada
+- Función imprimirRotulo actualizada para:
+  - Verificar que exista IP configurada
+  - Enviar datos: TROPA, NUMERO, PESO
+  - Puerto: 9100
+
+#### 3. Verificación
+- API `/api/rotulos?tipo=PESAJE_INDIVIDUAL`: ✅ Retorna rótulo
+- API `/api/rotulos/imprimir`: ✅ Genera DPL con variables reemplazadas
+- Variables reemplazadas correctamente: {TROPA} → "B 2026 0100", {NUMERO} → "0015", {PESO} → "450"
+
+#### 4. Cómo Usar
+1. Ir a Pesaje Individual
+2. Click en botón de impresora (esquina superior derecha)
+3. Ingresar IP de la impresora (ej: 192.168.1.100)
+4. Guardar
+5. Al registrar un animal, se imprimirá automáticamente el rótulo
+
+Stage Summary:
+- **Rótulo DPL creado para Datamax Mark II** ✅
+- **Diálogo de configuración de impresora** ✅
+- **Variables funcionando: TROPA, NUMERO, PESO** ✅
+- **Sistema listo para imprimir**
+
+---
 Task ID: 1544
 Agent: main
 Task: Corrección de todos los errores críticos restantes y simulación final

@@ -313,7 +313,17 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
   const [textos, setTextos] = useState<TextosConfig>(TEXTOS_DEFAULT)
   const [layoutLoaded, setLayoutLoaded] = useState(false)
 
+  // Configuración de impresora
+  const [configImpresoraOpen, setConfigImpresoraOpen] = useState(false)
+  const [impresoraIp, setImpresoraIp] = useState('')
+
   const isAdmin = operador.rol === 'ADMINISTRADOR' || (operador.permisos?.puedeAdminSistema ?? false)
+
+  // Cargar IP de impresora guardada
+  useEffect(() => {
+    const savedIp = localStorage.getItem('impresoraRotulosIp') || ''
+    setImpresoraIp(savedIp)
+  }, [])
 
   useEffect(() => {
     fetchLayout()
@@ -743,6 +753,13 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
 
       const rotulo = rotuloData.data[0]
 
+      // Verificar si hay IP configurada
+      if (!impresoraIp) {
+        toast.error('Configure la IP de la impresora primero')
+        setConfigImpresoraOpen(true)
+        return
+      }
+
       // Enviar a imprimir
       const printRes = await fetch('/api/rotulos/imprimir', {
         method: 'POST',
@@ -750,7 +767,9 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
         body: JSON.stringify({
           rotuloId: rotulo.id,
           datos: datosRotulo,
-          cantidad: 2
+          cantidad: 1,
+          impresoraIp: impresoraIp,
+          impresoraPuerto: 9100
         })
       })
 
@@ -1127,6 +1146,16 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
       {/* Botón flotante de edición */}
       {isAdmin && (
         <div className="fixed top-20 right-4 z-50 flex flex-col gap-2">
+          {/* Botón de configurar impresora - siempre visible */}
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => setConfigImpresoraOpen(true)} 
+            className={`shadow-lg h-10 w-10 ${impresoraIp ? 'bg-white border-stone-300' : 'bg-red-50 border-red-300 text-red-600'}`}
+            title={impresoraIp ? `Impresora: ${impresoraIp}` : 'Configurar impresora'}
+          >
+            <Printer className="w-5 h-5" />
+          </Button>
           {!editMode ? (
             <Button variant="outline" size="icon" onClick={() => { setEditMode(true); setShowConfigPanel(true) }} className="bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100 shadow-lg h-10 w-10" title="Editar Layout">
               <Edit3 className="w-5 h-5" />
@@ -1793,6 +1822,52 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)} size="sm">Cancelar</Button>
             <Button onClick={handleSaveEdit} size="sm">Guardar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de configuración de impresora */}
+      <Dialog open={configImpresoraOpen} onOpenChange={setConfigImpresoraOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="w-5 h-5 text-amber-600" />
+              Configurar Impresora de Rótulos
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label className="text-xs">IP de la impresora</Label>
+              <Input 
+                value={impresoraIp} 
+                onChange={(e) => setImpresoraIp(e.target.value)} 
+                placeholder="192.168.1.100"
+                className="mt-1"
+              />
+              <p className="text-xs text-stone-400 mt-1">
+                Puerto: 9100 (predeterminado para impresoras de etiquetas)
+              </p>
+            </div>
+            <div className="bg-stone-50 p-3 rounded-lg text-xs text-stone-500">
+              <p className="font-medium mb-1">Impresora configurada:</p>
+              <p>• Tipo: Datamax Mark II</p>
+              <p>• Tamaño etiqueta: 10 x 5 cm</p>
+              <p>• Datos: Tropa, Número, Peso</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfigImpresoraOpen(false)} size="sm">Cancelar</Button>
+            <Button 
+              onClick={() => {
+                localStorage.setItem('impresoraRotulosIp', impresoraIp)
+                setConfigImpresoraOpen(false)
+                toast.success('IP de impresora guardada: ' + impresoraIp)
+              }} 
+              size="sm"
+              disabled={!impresoraIp}
+            >
+              Guardar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
