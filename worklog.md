@@ -1167,8 +1167,46 @@ Al terminar CADA sesión de trabajo, verificar:
 - **Minor (0.X.0)**: Nuevas funcionalidades
 - **Patch (0.0.X)**: Bug fixes, mejoras menores
 
-### Versión actual: **3.4.0**
-### Próxima versión sugerida: **3.4.1**
+### Versión actual: **3.7.24**
+### Próxima versión sugerida: **3.7.25**
+
+---
+Task ID: 1602
+Agent: main
+Task: Documentar solución y prevención de pantalla gris en producción
+
+Work Log:
+
+#### 1. Causas Identificadas del Problema
+- **Conflicto de schema**: SQLite en desarrollo vs PostgreSQL en producción
+- **Merge conflicts**: Al hacer pull desde GitHub con cambios locales
+- **Variables de entorno**: .env incorrecto o con errores de sintaxis
+- **Caché del navegador**: Assets antiguos en caché
+
+#### 2. Solución Implementada
+**Archivo creado:** `ACTUALIZAR_PRODUCCION.md`
+- Guía paso a paso para actualizar PC de producción
+- Verificación de PostgreSQL antes de actualizar
+- Proceso seguro de git (reset --hard para evitar conflictos)
+- Verificación de schema.prisma y .env
+- Pasos para limpiar caché del navegador
+
+#### 3. Prevención para el Futuro
+1. **SIEMPRE verificar** el .env antes de actualizar
+2. **USAR git reset --hard** en lugar de pull para evitar conflictos
+3. **VERIFICAR provider** en schema.prisma (postgresql para producción)
+4. **LIMPIAR caché** del navegador después de actualizar (Ctrl+Shift+R)
+5. **HACER BACKUP** de la base de datos antes de cambios importantes
+
+#### 4. Archivos de Referencia
+- `ACTUALIZAR_PRODUCCION.md` - Guía completa de actualización
+- `REGLAS.md` - Checklist de sincronización de repositorios
+- `backup-sistema.bat` - Script para backup de PostgreSQL
+
+Stage Summary:
+- **Guía de actualización creada** ✅
+- **Causas documentadas** ✅
+- **Pasos preventivos definidos** ✅
 
 ---
 Task ID: 1570
