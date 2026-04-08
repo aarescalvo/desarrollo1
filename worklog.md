@@ -1345,6 +1345,51 @@ Stage Summary:
 - **Vista previa visual generada** ✅
 
 ---
+Task ID: 1605
+Agent: main
+Task: Crear plantilla Excel completa para carga de datos
+
+Work Log:
+
+#### 1. Plantilla Excel Creada
+**Archivo:** `upload/PLANTILLA_CARGA_DATOS_TRAZASOLE_v3.7.24.xlsx`
+
+#### 2. Hojas Incluidas
+
+| Hoja | Contenido | Columnas Obligatorias |
+|------|-----------|----------------------|
+| INSTRUCCIONES | Guía de uso | - |
+| CLIENTES | Clientes, productores, usuarios faena | NOMBRE, ES_PRODUCTOR, ES_USUARIO_FAENA |
+| OPERADORES | Usuarios del sistema | NOMBRE, USUARIO, PASSWORD, ROL |
+| TRANSPORTISTAS | Transportistas de ganado | NOMBRE |
+| CORRALES | Corrales disponibles | NOMBRE, CAPACIDAD |
+| CAMARAS | Cámaras frigoríficas | NOMBRE, TIPO, CAPACIDAD |
+| TROPAS | Tropas históricas | CODIGO, ESPECIE, NOMBRE_USUARIO_FAENA, CUIT_USUARIO_FAENA, CANTIDAD_CABEZAS |
+| ANIMALES | Animales de cada tropa | CODIGO_TROPA, NUMERO_ANIMAL, TIPO_ANIMAL |
+| DATOS_EJEMPLO | Datos de ejemplo para copiar | - |
+
+#### 3. Características
+- Columnas obligatorias marcadas en amarillo
+- Validaciones de datos (listas desplegables)
+- Instrucciones detalladas
+- Datos de ejemplo incluidos
+- Sin duplicación de datos
+
+#### 4. Validaciones Incluidas
+- ES_PRODUCTOR/ES_USUARIO_FAENA: SI/NO
+- ROL: ADMINISTRADOR/SUPERVISOR/OPERADOR
+- ACTIVO: SI/NO
+- ESPECIE: BOVINO/EQUINO
+- TIPO_CAMARA: FAENA/CUARTEO/DEPOSITO
+- TIPO_ANIMAL: TO/VA/VQ/MEJ/NO/NT
+
+Stage Summary:
+- **Plantilla Excel completa creada** ✅
+- **8 hojas con validaciones** ✅
+- **Datos de ejemplo incluidos** ✅
+- **Sin duplicación de datos** ✅
+
+---
 Task ID: 1570
 Agent: main
 Task: Implementar módulo completo de facturación para TrazaSole
