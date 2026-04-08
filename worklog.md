@@ -1341,7 +1341,8 @@ Stage Summary:
 - **API para imprimir 3 rótulos por media** ✅
 - **Carpeta public/logos/ creada** ✅
 - **Script de conversión de logos** ✅
-- **Pendiente: Subir logos del usuario**
+- **Logos subidos por usuario y convertidos a GRF** ✅
+- **Vista previa visual generada** ✅
 
 ---
 Task ID: 1570
