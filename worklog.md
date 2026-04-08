@@ -3161,3 +3161,64 @@ Stage Summary:
 - **Versión 3.7.22** ✅
 - **Subiendo a ambos repositorios** ✅
 
+
+---
+Task ID: 1601
+Agent: main
+Task: Soporte para impresora predeterminada de Windows en rótulos de pesaje individual
+
+Work Log:
+
+#### 1. Análisis del Sistema Actual
+- **Impresión TCP/IP**: Socket directo al puerto 9100 con IP configurada
+- **Fallback HTML**: `window.print()` para impresora predeterminada (solo como error)
+- **Problema**: Requería configurar IP obligatoriamente
+
+#### 2. Cambios Realizados
+
+**Archivo:** `src/components/pesaje-individual-module.tsx`
+
+**Nuevos estados:**
+- `usarPredeterminada`: boolean para seleccionar modo de impresión
+- Persistencia en localStorage: `impresoraRotulosPredeterminada`
+
+**Diálogo de configuración mejorado:**
+- Opción 1: Impresora Predeterminada de Windows
+  - Usa `window.print()` con la impresora configurada en el sistema
+  - No requiere configuración adicional
+- Opción 2: Impresora TCP/IP (Datamax)
+  - Conexión directa por red al puerto 9100
+  - Requiere IP de la impresora
+
+**Botón de impresora actualizado:**
+- Verde: Cuando hay configuración (IP o predeterminada)
+- Rojo: Cuando no hay configuración
+- Tooltip muestra el tipo de configuración activa
+
+**Lógica de impresión:**
+1. Si `usarPredeterminada === true` → imprimir HTML con `window.print()`
+2. Si hay IP configurada → enviar por TCP
+3. Sin configuración → usar predeterminada automáticamente
+
+#### 3. Rótulo HTML Mejorado
+- Tamaño: 10cm x 5cm (landscape/horizontal)
+- Datos principales:
+  - TROPA (arriba, ancho completo)
+  - N° Animal (columna izquierda)
+  - KG Vivos (columna central, fondo negro)
+  - Código de barras (columna derecha)
+- Formato optimizado para etiquetas adhesivas
+
+#### 4. Beneficios
+- No requiere configurar IP para usuarios con impresora local
+- Compatible con cualquier impresora instalada en Windows
+- Sigue soportando impresión TCP para Datamax/Zebra
+
+Stage Summary:
+- **Soporte para impresora predeterminada** ✅
+- **Diálogo de configuración mejorado** ✅
+- **Rótulo 10x5cm con datos requeridos** ✅
+- **Versión actualizada a 3.7.24** ✅
+
+### Versión actual: **3.7.24**
+

@@ -316,13 +316,16 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
   // Configuración de impresora
   const [configImpresoraOpen, setConfigImpresoraOpen] = useState(false)
   const [impresoraIp, setImpresoraIp] = useState('')
+  const [usarPredeterminada, setUsarPredeterminada] = useState(false)
 
   const isAdmin = operador.rol === 'ADMINISTRADOR' || (operador.permisos?.puedeAdminSistema ?? false)
 
-  // Cargar IP de impresora guardada
+  // Cargar configuración de impresora guardada
   useEffect(() => {
     const savedIp = localStorage.getItem('impresoraRotulosIp') || ''
+    const savedPredeterminada = localStorage.getItem('impresoraRotulosPredeterminada') === 'true'
     setImpresoraIp(savedIp)
+    setUsarPredeterminada(savedPredeterminada)
   }, [])
 
   useEffect(() => {
@@ -753,10 +756,16 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
 
       const rotulo = rotuloData.data[0]
 
-      // Verificar si hay IP configurada
-      if (!impresoraIp) {
-        toast.error('Configure la IP de la impresora primero')
-        setConfigImpresoraOpen(true)
+      // Verificar si hay configuración de impresora
+      if (!impresoraIp && !usarPredeterminada) {
+        // Si no hay configuración, usar impresora predeterminada automáticamente
+        imprimirRotuloHTML(animal)
+        return
+      }
+
+      // Si está configurado para usar predeterminada, imprimir HTML
+      if (usarPredeterminada) {
+        imprimirRotuloHTML(animal)
         return
       }
 
@@ -788,99 +797,161 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
     }
   }
 
-  // Fallback: imprimir HTML básico - Rótulo 8x3 cm
+  // Imprimir rótulo HTML con impresora predeterminada - 10x5 cm
   const imprimirRotuloHTML = (animal: Animal) => {
     try {
       // Crear ventana con características específicas para impresión
-      const printWindow = window.open('', '_blank', 'width=400,height=200,menubar=no,toolbar=no,location=no,status=no')
+      const printWindow = window.open('', '_blank', 'width=500,height=300,menubar=no,toolbar=no,location=no,status=no')
       if (!printWindow) {
         toast.error('No se pudo abrir ventana de impresión. Verifique que los popups estén permitidos.')
         return
       }
+      
+      const pesoFormateado = animal.pesoVivo?.toLocaleString('es-AR') || '0'
+      const codigoCompleto = animal.codigo || `${tropaSeleccionada?.codigo || ''}-${String(animal.numero).padStart(3, '0')}`
       
       const htmlContent = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rótulo ${animal.codigo}</title>
+  <title>Rótulo ${codigoCompleto}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    @page { size: 8cm 3cm; margin: 0; }
+    @page { size: 100mm 50mm landscape; margin: 0; }
     body { 
       font-family: Arial, sans-serif; 
-      padding: 3mm; 
-      width: 8cm;
-      height: 3cm;
-      margin: 0 auto;
+      width: 100mm;
+      height: 50mm;
       background: white;
     }
-    .rotulo {
+    .etiqueta {
       border: 2px solid black;
-      padding: 3mm;
+      width: 100%;
       height: 100%;
-      box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      background: white;
     }
-    .header {
-      text-align: center;
-      font-size: 11px;
-      font-weight: bold;
-      border-bottom: 1px solid black;
-      padding-bottom: 2mm;
-      margin-bottom: 2mm;
-    }
-    .content {
+    /* Tropa arriba - ANCHO COMPLETO */
+    .campo-tropa-top {
+      width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex: 1;
+      padding: 2mm 4mm;
+      border-bottom: 2px solid black;
+      background: #f0f0f0;
     }
-    .numero-animal {
-      font-size: 32px;
-      font-weight: bold;
-      text-align: center;
-      line-height: 1;
-      color: black;
-    }
-    .datos {
-      text-align: right;
+    .tropa-label {
       font-size: 10px;
-      color: black;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #333;
     }
-    .datos div {
-      margin: 1mm 0;
+    .tropa-value {
+      font-size: 22px;
+      font-weight: 900;
+      color: #000;
+    }
+    /* Fila inferior con 3 campos */
+    .fila-inferior {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+    }
+    .campo {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-right: 2px solid black;
+      padding: 2mm;
+    }
+    .campo:last-child {
+      border-right: none;
+    }
+    .campo-label {
+      font-size: 8px;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #333;
+      margin-bottom: 1mm;
+    }
+    .campo-value {
+      font-size: 16px;
+      font-weight: 900;
+      text-align: center;
+    }
+    /* Campo Número */
+    .campo-numero .campo-value {
+      font-size: 28px;
+    }
+    /* Campo Peso */
+    .campo-peso {
+      background: #000;
+      color: #fff;
+    }
+    .campo-peso .campo-label {
+      color: #ccc;
+    }
+    .campo-peso .campo-value {
+      color: #fff;
+      font-size: 20px;
+    }
+    .campo-peso .peso-unit {
+      font-size: 10px;
+      font-weight: bold;
+    }
+    /* Campo Código */
+    .campo-codigo {
+      flex: 1.3;
     }
     .barcode {
-      text-align: center;
       font-family: 'Courier New', monospace;
-      font-size: 11px;
+      font-size: 18px;
       letter-spacing: 2px;
-      margin-top: 2mm;
-      color: black;
+      line-height: 1;
     }
-    @media print {
+    .barcode-text {
+      font-family: 'Courier New', monospace;
+      font-size: 8px;
+      font-weight: bold;
+      margin-top: 1mm;
+    }
+    @media print { 
       body { padding: 0; }
-      .rotulo { border: 2px solid black; }
     }
   </style>
 </head>
 <body>
-  <div class="rotulo">
-    <div class="header">SOLEMAR ALIMENTARIA</div>
-    <div class="content">
-      <div class="numero-animal">${animal.numero}</div>
-      <div class="datos">
-        <div><strong>Tropa:</strong> ${tropaSeleccionada?.codigo || '-'}</div>
-        <div><strong>Tipo:</strong> ${animal.tipoAnimal || '-'}</div>
-        <div><strong>Peso:</strong> ${animal.pesoVivo?.toLocaleString() || '-'} kg</div>
-        ${animal.caravana ? `<div><strong>Car.:</strong> ${animal.caravana}</div>` : ''}
+  <div class="etiqueta">
+    <!-- Tropa arriba - ANCHO COMPLETO -->
+    <div class="campo-tropa-top">
+      <div class="tropa-label">TROPA</div>
+      <div class="tropa-value">${(tropaSeleccionada?.codigo || '').replace(/\s/g, '')}</div>
+    </div>
+    
+    <!-- Fila inferior con 3 campos -->
+    <div class="fila-inferior">
+      <!-- N° Animal -->
+      <div class="campo campo-numero">
+        <div class="campo-label">N° Animal</div>
+        <div class="campo-value">${String(animal.numero).padStart(3, '0')}</div>
+      </div>
+      
+      <!-- KG Vivos -->
+      <div class="campo campo-peso">
+        <div class="campo-label">KG Vivos</div>
+        <div class="campo-value">${pesoFormateado} <span class="peso-unit">kg</span></div>
+      </div>
+      
+      <!-- Código de barras -->
+      <div class="campo campo-codigo">
+        <div class="barcode">*${codigoCompleto}*</div>
+        <div class="barcode-text">${codigoCompleto}</div>
       </div>
     </div>
-    <div class="barcode">*${animal.codigo}*</div>
   </div>
   <script>
     (function() {
@@ -1151,8 +1222,8 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
             variant="outline" 
             size="icon" 
             onClick={() => setConfigImpresoraOpen(true)} 
-            className={`shadow-lg h-10 w-10 ${impresoraIp ? 'bg-white border-stone-300' : 'bg-red-50 border-red-300 text-red-600'}`}
-            title={impresoraIp ? `Impresora: ${impresoraIp}` : 'Configurar impresora'}
+            className={`shadow-lg h-10 w-10 ${(impresoraIp || usarPredeterminada) ? 'bg-green-50 border-green-300 text-green-600' : 'bg-red-50 border-red-300 text-red-600'}`}
+            title={usarPredeterminada ? 'Impresora predeterminada de Windows' : impresoraIp ? `Impresora TCP: ${impresoraIp}` : 'Configurar impresora'}
           >
             <Printer className="w-5 h-5" />
           </Button>
@@ -1828,7 +1899,7 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
 
       {/* Diálogo de configuración de impresora */}
       <Dialog open={configImpresoraOpen} onOpenChange={setConfigImpresoraOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Printer className="w-5 h-5 text-amber-600" />
@@ -1836,23 +1907,55 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div>
-              <Label className="text-xs">IP de la impresora</Label>
-              <Input 
-                value={impresoraIp} 
-                onChange={(e) => setImpresoraIp(e.target.value)} 
-                placeholder="192.168.1.100"
-                className="mt-1"
-              />
-              <p className="text-xs text-stone-400 mt-1">
-                Puerto: 9100 (predeterminado para impresoras de etiquetas)
-              </p>
+            {/* Opción: Impresora predeterminada de Windows */}
+            <div 
+              className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${usarPredeterminada ? 'border-green-500 bg-green-50' : 'border-stone-200 hover:border-stone-300'}`}
+              onClick={() => { setUsarPredeterminada(true); setImpresoraIp('') }}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-4 h-4 rounded-full border-2 ${usarPredeterminada ? 'border-green-500 bg-green-500' : 'border-stone-300'}`}>
+                  {usarPredeterminada && <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5" />}
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Impresora Predeterminada de Windows</p>
+                  <p className="text-xs text-stone-500">Usa la impresora configurada en el sistema</p>
+                </div>
+              </div>
             </div>
-            <div className="bg-stone-50 p-3 rounded-lg text-xs text-stone-500">
-              <p className="font-medium mb-1">Impresora configurada:</p>
-              <p>• Tipo: Datamax Mark II</p>
+
+            {/* Opción: Impresora TCP/IP */}
+            <div 
+              className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${!usarPredeterminada ? 'border-green-500 bg-green-50' : 'border-stone-200 hover:border-stone-300'}`}
+              onClick={() => setUsarPredeterminada(false)}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-4 h-4 rounded-full border-2 ${!usarPredeterminada ? 'border-green-500 bg-green-500' : 'border-stone-300'}`}>
+                  {!usarPredeterminada && <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5" />}
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Impresora TCP/IP (Datamax)</p>
+                  <p className="text-xs text-stone-500">Conexión directa por red - Puerto 9100</p>
+                </div>
+              </div>
+              {!usarPredeterminada && (
+                <div className="ml-7">
+                  <Label className="text-xs">IP de la impresora</Label>
+                  <Input 
+                    value={impresoraIp} 
+                    onChange={(e) => setImpresoraIp(e.target.value)} 
+                    placeholder="192.168.1.100"
+                    className="mt-1"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="bg-amber-50 p-3 rounded-lg text-xs text-amber-700">
+              <p className="font-medium mb-1">📌 Información del rótulo:</p>
               <p>• Tamaño etiqueta: 10 x 5 cm</p>
-              <p>• Datos: Tropa, Número, Peso</p>
+              <p>• Datos: Tropa, Número Animal, KG Vivo</p>
+              <p>• Código de barras incluido</p>
             </div>
           </div>
           <DialogFooter>
@@ -1860,11 +1963,16 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
             <Button 
               onClick={() => {
                 localStorage.setItem('impresoraRotulosIp', impresoraIp)
+                localStorage.setItem('impresoraRotulosPredeterminada', String(usarPredeterminada))
                 setConfigImpresoraOpen(false)
-                toast.success('IP de impresora guardada: ' + impresoraIp)
+                if (usarPredeterminada) {
+                  toast.success('Usando impresora predeterminada de Windows')
+                } else {
+                  toast.success('IP de impresora guardada: ' + impresoraIp)
+                }
               }} 
               size="sm"
-              disabled={!impresoraIp}
+              disabled={!usarPredeterminada && !impresoraIp}
             >
               Guardar
             </Button>
