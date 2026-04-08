@@ -1209,6 +1209,60 @@ Stage Summary:
 - **Pasos preventivos definidos** ✅
 
 ---
+Task ID: 1603
+Agent: main
+Task: Organizar todos los scripts .bat en carpeta scripts/
+
+Work Log:
+
+#### 1. Carpeta scripts/ Creada
+Todos los archivos .bat organizados en una carpeta dedicada.
+
+#### 2. Scripts Creados
+| Script | Función |
+|--------|---------|
+| `menu-principal.bat` | Menú interactivo con todas las opciones |
+| `iniciar-servidor.bat` | Inicia el servidor con interfaz visual |
+| `detener-servidor.bat` | Detiene todos los procesos bun/node |
+| `iniciar-silencioso.bat` | Inicia sin interfaz (para tareas programadas) |
+| `detener-silencioso.bat` | Detiene sin interfaz (para tareas programadas) |
+| `backup-base-datos.bat` | Backup de PostgreSQL con fecha y versión |
+| `backup-sistema.bat` | Backup completo (archivos + BD) |
+| `restaurar-backup.bat` | Restaurar con selección de versión/fecha |
+| `listar-backups.bat` | Ver todos los backups disponibles |
+| `actualizar-sistema.bat` | Actualizar desde GitHub |
+| `reiniciar-actualizado.bat` | Detener + Backup + Actualizar + Iniciar |
+
+#### 3. Características
+- **Mantener últimos 50 backups**: Los scripts de backup limpian automáticamente los más antiguos
+- **Versionado**: Cada backup incluye la versión del sistema
+- **Fecha y hora**: Nombres de archivo con timestamp
+- **Menú interactivo**: `menu-principal.bat` agrupa todas las opciones
+- **Modo silencioso**: Para usar con Programador de Tareas de Windows
+
+#### 4. Estructura de Carpetas
+```
+backups/
+├── base-datos/          # Backups SQL
+│   └── backup_YYYY-MM-DD_HH-MM_vX.X.X.sql
+└── sistema/             # Backups completos
+    └── backup_sistema_YYYY-MM-DD_HH-MM_vX.X.X/
+        ├── archivos/    # src, prisma, scripts, config
+        ├── base-datos/  # SQL
+        └── INFO.txt     # Información del backup
+```
+
+#### 5. Scripts Antiguos Eliminados
+Eliminados los .bat de la raíz del proyecto para mantener orden.
+
+Stage Summary:
+- **11 scripts .bat creados y organizados** ✅
+- **Menú principal interactivo** ✅
+- **Sistema de retención de 50 backups** ✅
+- **Modo silencioso para tareas programadas** ✅
+- **Versión 3.7.24** ✅
+
+---
 Task ID: 1570
 Agent: main
 Task: Implementar módulo completo de facturación para TrazaSole
