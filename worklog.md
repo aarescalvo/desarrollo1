@@ -3839,3 +3839,33 @@ Stage Summary:
 - **Layout de 3 filas consistente** ✅
 - **Versión actualizada a 3.7.29** ✅
 
+---
+Task ID: 1608
+Agent: main
+Task: Revertir cambios incorrectos al rótulo de media res en romaneo
+
+Work Log:
+
+#### 1. Error Cometido
+- Se modificó incorrectamente el rótulo de media res en romaneo con un layout similar al de pesaje individual
+- El usuario aclaró que son rótulos DIFERENTES con especificaciones distintas
+- El rótulo de pesaje individual DEBE QUEDAR COMO ESTÁ
+
+#### 2. Acción Tomada
+- Revertido `src/components/romaneo/index.tsx` a su versión original
+- El rótulo de pesaje individual NO fue modificado (correcto)
+
+#### 3. Recursos Disponibles
+- Logos: `public/logos/logo-solemar.grf`, `logo-senasa.grf` (para ZPL)
+- Logos: `public/logos/logo-solemar.jpg`, `logo-senasa.jpg` (para HTML)
+- Seed ZPL existente: `prisma/seed-rotulo-media-res.ts` (Zebra ZT230, 100x150mm)
+
+#### 4. Pendiente
+- Necesito que el usuario vuelva a pasar las especificaciones exactas del rótulo de media res
+
+Stage Summary:
+- **Cambios revertidos** ✅
+- **Rótulo pesaje individual SIN modificar** ✅
+- **Versión actualizada a 3.7.30** ✅
+- **Esperando especificaciones del usuario**
+
