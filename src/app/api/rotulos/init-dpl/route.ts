@@ -3,14 +3,14 @@ import { db } from '@/lib/db'
 
 /**
  * POST - Crear rótulos DPL por defecto para Datamax Mark II
- * Formato: 5cm alto x 10cm ancho
+ * Formato: 6cm alto x 9cm ancho
  */
 export async function POST(request: NextRequest) {
   try {
     const rotulosCreados = []
 
     // ========================================
-    // RÓTULO PESAJE INDIVIDUAL - 5cm x 10cm con CÓDIGO DE BARRAS
+    // RÓTULO PESAJE INDIVIDUAL - 6cm x 9cm con CÓDIGO DE BARRAS
     // ========================================
     const rotuloPesajeIndividual = `
 <STX>L
@@ -74,18 +74,18 @@ E
 
       const nuevoRotulo = await db.rotulo.create({
         data: {
-          nombre: 'Pesaje Individual 5x10cm + Cód.Barras - Datamax',
+          nombre: 'Pesaje Individual 9x6cm + Cód.Barras - Datamax',
           codigo: 'PESAJE_INDIVIDUAL_DPL_V2',
           tipo: 'PESAJE_INDIVIDUAL',
           tipoImpresora: 'DATAMAX',
           modeloImpresora: 'MARK_II',
           contenido: rotuloPesajeIndividual,
-          ancho: 100,  // 10cm
-          alto: 50,    // 5cm
+          ancho: 90,  // 9cm
+          alto: 60,   // 6cm
           dpi: 203,
           activo: true,
           esDefault: true,
-          descripcion: 'Rótulo 5x10cm para pesaje individual. Incluye: Número animal (resaltado), Tropa, Peso y Código de barras Code128.',
+          descripcion: 'Rótulo 9x6cm para pesaje individual. Incluye: Número animal (resaltado), Tropa, Peso y Código de barras Code128.',
           variables: JSON.stringify([
             { variable: 'NUMERO', campo: 'numero', descripcion: 'Número de animal' },
             { variable: 'TROPA', campo: 'tropa', descripcion: 'Código de tropa' },
@@ -140,18 +140,18 @@ E
     if (!existenteCompacto) {
       const nuevoRotulo = await db.rotulo.create({
         data: {
-          nombre: 'Pesaje Individual Compacto - Datamax',
+          nombre: 'Pesaje Individual Compacto 9x6cm - Datamax',
           codigo: 'PESAJE_INDIVIDUAL_COMPACTO_DPL',
           tipo: 'PESAJE_INDIVIDUAL',
           tipoImpresora: 'DATAMAX',
           modeloImpresora: 'MARK_II',
           contenido: rotuloCompacto,
-          ancho: 100,
-          alto: 50,
+          ancho: 90,
+          alto: 60,
           dpi: 203,
           activo: true,
           esDefault: false,
-          descripcion: 'Rótulo compacto - Número grande centrado, tropa y peso.',
+          descripcion: 'Rótulo compacto 9x6cm - Número grande centrado, tropa y peso.',
           variables: JSON.stringify([
             { variable: 'NUMERO', campo: 'numero', descripcion: 'Número de animal' },
             { variable: 'TROPA', campo: 'tropa', descripcion: 'Código de tropa' },

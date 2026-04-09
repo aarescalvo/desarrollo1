@@ -735,11 +735,11 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
   return (
     <div className="h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex flex-col overflow-hidden">
       {/* Header fijo */}
-      <div className="flex-shrink-0 p-3 pb-1">
+      <div className="flex-shrink-0 p-2 pb-0.5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-stone-800">Romaneo - Pesaje de Medias</h1>
-            <p className="text-stone-500 text-sm">Faena: {fechaFaena}</p>
+            <h1 className="text-lg font-bold text-stone-800">Romaneo - Pesaje de Medias</h1>
+            <p className="text-stone-500 text-xs">Faena: {fechaFaena}</p>
           </div>
           <div className="flex items-center gap-2">
             {faenaTerminada && !modoEdicion && (
@@ -767,20 +767,20 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
       </div>
 
       {/* Configuración activa */}
-      <div className="flex-shrink-0 px-3">
+      <div className="flex-shrink-0 px-2">
         <Card className="border-0 shadow-sm bg-amber-50">
-          <CardContent className="p-2">
+          <CardContent className="p-1.5">
             <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="flex items-center gap-1">
-                  <User className="w-4 h-4 text-amber-600" />
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="flex items-center gap-0.5 text-xs">
+                  <User className="w-3 h-3 text-amber-600" />
                   <strong>Tip.:</strong> {tipificadores.find(t => t.id === tipificadorId)?.nombre || '-'}
                 </span>
-                <div className="flex items-center gap-1">
-                  <Warehouse className="w-4 h-4 text-amber-600" />
-                  <strong>Cám.:</strong>
+                <div className="flex items-center gap-0.5">
+                  <Warehouse className="w-3 h-3 text-amber-600" />
+                  <strong className="text-xs">Cám.:</strong>
                   <Select value={camaraId} onValueChange={setCamaraId}>
-                    <SelectTrigger className="h-6 w-32 bg-white border-amber-200 text-xs">
+                    <SelectTrigger className="h-5 w-28 bg-white border-amber-200 text-[10px]">
                       <SelectValue placeholder="Sel." />
                     </SelectTrigger>
                     <SelectContent>
@@ -790,20 +790,20 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleEliminarUltimo} disabled={mediasPesadas.length === 0} className="h-6 text-xs text-red-600 hover:bg-red-50 border-red-200">
-                  <Trash2 className="w-3 h-3 mr-1" />
+                <Button variant="outline" size="sm" onClick={handleEliminarUltimo} disabled={mediasPesadas.length === 0} className="h-5 text-[10px] text-red-600 hover:bg-red-50 border-red-200 px-2">
+                  <Trash2 className="w-3 h-3 mr-0.5" />
                   Eliminar
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleReimprimirUltimo} disabled={!ultimoRotulo} className="h-6 text-xs">
-                  <RotateCcw className="w-3 h-3 mr-1" />
+                <Button variant="outline" size="sm" onClick={handleReimprimirUltimo} disabled={!ultimoRotulo} className="h-5 text-[10px] px-2">
+                  <RotateCcw className="w-3 h-3 mr-0.5" />
                   Reimprimir
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setReimpresionOpen(true)} className="h-6 text-xs border-blue-300 text-blue-600">
-                  <Printer className="w-3 h-3 mr-1" />
+                <Button variant="outline" size="sm" onClick={() => setReimpresionOpen(true)} className="h-5 text-[10px] border-blue-300 text-blue-600 px-2">
+                  <Printer className="w-3 h-3 mr-0.5" />
                   Reimprimir...
                 </Button>
               </div>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-[10px]">
                 {mediasPesadas.length} medias - {getTotalKg().toFixed(1)} kg
               </Badge>
             </div>
@@ -812,19 +812,19 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
       </div>
 
       {/* Contenido principal sin scroll */}
-      <div className="flex-1 p-3 pt-1 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 h-full">
+      <div className="flex-1 p-2 pt-1 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 h-full">
           
           {/* Panel principal de pesaje - FIJO SIN SCROLL */}
           <Card className="lg:col-span-2 border-0 shadow-md flex flex-col overflow-hidden">
-            <CardHeader className="bg-stone-50 flex-shrink-0 py-2 px-3">
+            <CardHeader className="bg-stone-50 flex-shrink-0 py-1.5 px-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">
+                <CardTitle className="text-sm">
                   {faenaTerminada ? '✓ Faena Terminada' : 'Pesaje Actual'}
                 </CardTitle>
                 {!faenaTerminada && (
-                  <div className="flex items-center gap-1">
-                    <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => {
+                  <div className="flex items-center gap-0.5">
+                    <Button variant="outline" size="sm" className="h-6 w-6 p-0" onClick={() => {
                       const idx = garronesLista.findIndex(g => g.garron === garronActual)
                       if (idx > 0) {
                         const prev = garronesLista[idx - 1]
@@ -834,8 +834,8 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
                     }}>
                       <ChevronUp className="w-4 h-4" />
                     </Button>
-                    <span className="text-xl font-bold text-amber-600 min-w-[50px] text-center">#{garronActual}</span>
-                    <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => {
+                    <span className="text-lg font-bold text-amber-600 min-w-[40px] text-center">#{garronActual}</span>
+                    <Button variant="outline" size="sm" className="h-6 w-6 p-0" onClick={() => {
                       const idx = garronesLista.findIndex(g => g.garron === garronActual)
                       if (idx < garronesLista.length - 1) {
                         const next = garronesLista[idx + 1]
@@ -851,19 +851,19 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
             </CardHeader>
             
             {faenaTerminada ? (
-              <CardContent className="flex-1 flex items-center justify-center">
+              <CardContent className="flex-1 flex items-center justify-center p-2">
                 <div className="text-center">
-                  <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
-                  <h2 className="text-lg font-bold text-stone-700 mb-1">Faena Completada</h2>
-                  <p className="text-stone-500 text-sm">Total: {mediasPesadas.length} medias - {getTotalKg().toFixed(1)} kg</p>
+                  <CheckCircle className="w-10 h-10 mx-auto mb-2 text-green-500" />
+                  <h2 className="text-base font-bold text-stone-700 mb-1">Faena Completada</h2>
+                  <p className="text-stone-500 text-xs">Total: {mediasPesadas.length} medias - {getTotalKg().toFixed(1)} kg</p>
                 </div>
               </CardContent>
             ) : (
-              <CardContent className="flex-1 flex flex-col p-2 overflow-hidden">
+              <CardContent className="flex-1 flex flex-col p-1.5 overflow-hidden">
                 {/* Datos del animal */}
                 <div className="flex-shrink-0">
                   {asignacionActual ? (
-                    <div className="grid grid-cols-4 gap-1 p-1.5 bg-stone-50 rounded text-[10px]">
+                    <div className="grid grid-cols-4 gap-0.5 p-1 bg-stone-50 rounded text-[9px]">
                       <div><span className="text-stone-400">Tropa</span><br/><span className="font-medium">{asignacionActual.tropaCodigo || '-'}</span></div>
                       <div><span className="text-stone-400">Tipo</span><br/><span className="font-medium">{asignacionActual.tipoAnimal || '-'}</span></div>
                       <div><span className="text-stone-400">P.Vivo</span><br/><span className="font-medium">{asignacionActual.pesoVivo?.toFixed(0) || '-'}kg</span></div>
@@ -888,58 +888,58 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
                 )}
 
                 {/* Lado actual */}
-                <div className="flex items-center justify-center gap-2 flex-shrink-0 mt-1">
+                <div className="flex items-center justify-center gap-1.5 flex-shrink-0 mt-0.5">
                   <Button 
                     variant={ladoActual === 'DERECHA' ? 'default' : 'outline'} 
                     size="sm"
-                    className={`h-8 px-5 ${ladoActual === 'DERECHA' ? 'bg-blue-600 hover:bg-blue-700' : ''}`} 
+                    className={`h-7 px-4 ${ladoActual === 'DERECHA' ? 'bg-blue-600 hover:bg-blue-700' : ''}`} 
                     onClick={() => setLadoActual('DERECHA')} 
                     disabled={!modoEdicion && asignacionActual?.tieneMediaDer}
                   >
-                    DER {asignacionActual?.tieneMediaDer && <CheckCircle className="w-3 h-3 ml-1" />}
+                    DER {asignacionActual?.tieneMediaDer && <CheckCircle className="w-2.5 h-2.5 ml-0.5" />}
                   </Button>
                   <Button 
                     variant={ladoActual === 'IZQUIERDA' ? 'default' : 'outline'} 
                     size="sm"
-                    className={`h-8 px-5 ${ladoActual === 'IZQUIERDA' ? 'bg-pink-600 hover:bg-pink-700' : ''}`} 
+                    className={`h-7 px-4 ${ladoActual === 'IZQUIERDA' ? 'bg-pink-600 hover:bg-pink-700' : ''}`} 
                     onClick={() => setLadoActual('IZQUIERDA')} 
                     disabled={!modoEdicion && (!asignacionActual?.tieneMediaDer || asignacionActual?.tieneMediaIzq)}
                   >
-                    IZQ {asignacionActual?.tieneMediaIzq && <CheckCircle className="w-3 h-3 ml-1" />}
+                    IZQ {asignacionActual?.tieneMediaIzq && <CheckCircle className="w-2.5 h-2.5 ml-0.5" />}
                   </Button>
                 </div>
 
                 {/* Peso */}
-                <div className="text-center flex-shrink-0 my-1">
-                  <Label className="text-xs">Peso (kg)</Label>
-                  <div className="flex items-center justify-center gap-2 mt-0.5">
-                    <Input type="number" value={pesoBalanza} onChange={(e) => setPesoBalanza(e.target.value)} className="text-2xl font-bold text-center h-12 w-32" placeholder="0" step="0.1" />
-                    <Button variant="outline" size="icon" onClick={handleCapturarPeso} className="h-10 w-10"><Scale className="w-4 h-4" /></Button>
+                <div className="text-center flex-shrink-0 my-0.5">
+                  <Label className="text-[10px]">Peso (kg)</Label>
+                  <div className="flex items-center justify-center gap-1.5 mt-0.5">
+                    <Input type="number" value={pesoBalanza} onChange={(e) => setPesoBalanza(e.target.value)} className="text-xl font-bold text-center h-10 w-28" placeholder="0" step="0.1" />
+                    <Button variant="outline" size="icon" onClick={handleCapturarPeso} className="h-9 w-9"><Scale className="w-4 h-4" /></Button>
                   </div>
                 </div>
 
                 {/* Dentición */}
                 <div className="flex-shrink-0">
-                  <Label className="text-[10px]">Dentición {asignacionActual?.tieneMediaDer && <span className="text-amber-600">(Fijado)</span>}</Label>
-                  <div className="flex gap-1 mt-0.5">
+                  <Label className="text-[9px]">Dentición {asignacionActual?.tieneMediaDer && <span className="text-amber-600">(Fijado)</span>}</Label>
+                  <div className="flex gap-0.5 mt-0.5">
                     {DIENTES.map((d) => (
-                      <Button key={d} variant={denticion === d ? 'default' : 'outline'} size="sm" className={`flex-1 h-7 text-xs ${denticion === d ? 'bg-amber-500 hover:bg-amber-600' : ''}`} onClick={() => setDenticion(d)} disabled={asignacionActual?.tieneMediaDer && denticion !== '' && denticion !== d}>
+                      <Button key={d} variant={denticion === d ? 'default' : 'outline'} size="sm" className={`flex-1 h-6 text-[10px] ${denticion === d ? 'bg-amber-500 hover:bg-amber-600' : ''}`} onClick={() => setDenticion(d)} disabled={asignacionActual?.tieneMediaDer && denticion !== '' && denticion !== d}>
                         {d}
                       </Button>
                     ))}
                   </div>
                 </div>
 
-                <Separator className="my-1.5 flex-shrink-0" />
+                <Separator className="my-1 flex-shrink-0" />
 
                 {/* Botones de acción */}
-                <div className="grid grid-cols-2 gap-2 flex-shrink-0 mt-auto">
-                  <Button size="sm" onClick={() => handleAceptarPeso(false)} disabled={saving || !pesoBalanza || parseFloat(pesoBalanza) <= 0 || !asignacionActual} className="h-10 bg-green-600 hover:bg-green-700">
-                    <Printer className="w-4 h-4 mr-1" />
+                <div className="grid grid-cols-2 gap-1.5 flex-shrink-0 mt-auto">
+                  <Button size="sm" onClick={() => handleAceptarPeso(false)} disabled={saving || !pesoBalanza || parseFloat(pesoBalanza) <= 0 || !asignacionActual} className="h-9 bg-green-600 hover:bg-green-700">
+                    <Printer className="w-3.5 h-3.5 mr-0.5" />
                     {saving ? '...' : 'ACEPTAR'}
                   </Button>
-                  <Button size="sm" onClick={handleAbrirDecomiso} disabled={saving || !pesoBalanza || parseFloat(pesoBalanza) <= 0 || !asignacionActual} variant="outline" className="h-10 border-red-300 text-red-600 hover:bg-red-50">
-                    <AlertOctagon className="w-4 h-4 mr-1" />
+                  <Button size="sm" onClick={handleAbrirDecomiso} disabled={saving || !pesoBalanza || parseFloat(pesoBalanza) <= 0 || !asignacionActual} variant="outline" className="h-9 border-red-300 text-red-600 hover:bg-red-50">
+                    <AlertOctagon className="w-3.5 h-3.5 mr-0.5" />
                     DECOMISO
                   </Button>
                 </div>
@@ -949,8 +949,8 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
 
           {/* Panel lateral - Listado de Garrones con scroll interno */}
           <Card className="border-0 shadow-md flex flex-col overflow-hidden">
-            <CardHeader className="bg-stone-50 py-2 px-3 flex-shrink-0">
-              <CardTitle className="text-sm">Garrones ({garronesLista.filter(g => g.completo).length}/{garronesLista.length})</CardTitle>
+            <CardHeader className="bg-stone-50 py-1.5 px-2 flex-shrink-0">
+              <CardTitle className="text-xs">Garrones ({garronesLista.filter(g => g.completo).length}/{garronesLista.length})</CardTitle>
             </CardHeader>
             <div ref={scrollRef} className="flex-1 overflow-y-auto">
               {garronesLista.length === 0 ? (

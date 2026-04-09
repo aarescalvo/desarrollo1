@@ -1167,8 +1167,51 @@ Al terminar CADA sesión de trabajo, verificar:
 - **Minor (0.X.0)**: Nuevas funcionalidades
 - **Patch (0.0.X)**: Bug fixes, mejoras menores
 
-### Versión actual: **3.7.24**
-### Próxima versión sugerida: **3.7.25**
+### Versión actual: **3.7.25**
+### Próxima versión sugerida: **3.7.26**
+
+---
+Task ID: 1603
+Agent: main
+Task: Correcciones UI Romaneo y Rótulo Pesaje Individual
+
+Work Log:
+
+#### 1. Romaneo Pesaje de Medias - Layout sin scroll
+**Problema:** La pantalla de romaneo no era visible en su totalidad, requería scroll vertical.
+
+**Solución implementada:** Reducir espaciados y tamaños para que quepa sin scroll:
+- Header: `p-3` → `p-2`, `text-xl` → `text-lg`
+- Configuración activa: `p-2` → `p-1.5`, iconos `w-4` → `w-3`
+- Botones de acción: `h-6` → `h-5`, textos `text-xs` → `text-[10px]`
+- Panel principal: `gap-3` → `gap-2`, padding reducido
+- CardHeader: `py-2 px-3` → `py-1.5 px-2`
+- Título: `text-base` → `text-sm`
+- Botones DER/IZQ: `h-8 px-5` → `h-7 px-4`
+- Input peso: `h-12 w-32 text-2xl` → `h-10 w-28 text-xl`
+- Botones dentición: `h-7 text-xs` → `h-6 text-[10px]`
+- Botones acción: `h-10` → `h-9`
+- Panel lateral: título `text-sm` → `text-xs`
+
+**Resultado:** La pantalla ahora cabe sin scroll vertical. El scroll solo está habilitado en el listado de garrones.
+
+#### 2. Rótulo Pesaje Individual - Tamaño 9x6cm
+**Problema:** El rótulo de pesaje individual no cabía en el tamaño 5x10cm.
+
+**Solución implementada:** Cambiar tamaño a 9x6cm:
+**Archivo:** `src/app/api/rotulos/init-dpl/route.ts`
+- Ancho: 100mm → 90mm (9cm)
+- Alto: 50mm → 60mm (6cm)
+- Nombre actualizado: "Pesaje Individual 9x6cm + Cód.Barras - Datamax"
+- Descripción actualizada para reflejar el nuevo tamaño
+
+**Nota:** El rótulo HTML de rotuloPrint.ts ya tenía tamaño 90mm x 60mm (correcto).
+
+Stage Summary:
+- **Romaneo pesaje de medias optimizado** ✅
+- **Sin scroll vertical en pantalla principal** ✅
+- **Rótulo pesaje individual actualizado a 9x6cm** ✅
+- **Versión actualizada a 3.7.25** ✅
 
 ---
 Task ID: 1602
