@@ -3496,3 +3496,47 @@ Stage Summary:
 - **Instrucciones de uso incluidas** ✅
 - **Archivo: upload/PLANTILLA_CARGA_DATOS_TRAZASOLE_v3.7.24.xlsx** ✅
 
+
+---
+Task ID: 1604
+Agent: main
+Task: Corregir pantalla romaneo y rótulo pesaje individual
+
+Work Log:
+
+#### 1. Corrección Rótulo Pesaje Individual
+**Problema:** El rótulo medía 10x5cm, pero la medida correcta es 9x6cm
+
+**Archivos modificados:**
+- `src/lib/print-dpl.ts` - Dimensiones DPL y ZPL
+- `src/components/pesaje-individual/rotuloPrint.ts` - Plantilla HTML
+
+**Cambios realizados:**
+- WIDTH: 100mm → 90mm (9cm)
+- HEIGHT: 50mm → 60mm (6cm)
+- Ajustadas posiciones de elementos para nuevo tamaño
+- Reducidos tamaños de fuente para ajustar al nuevo formato
+
+#### 2. Corrección Layout Pantalla Romaneo
+**Problema:** La pantalla de pesaje de medias no era visible en su totalidad, requería scroll vertical
+
+**Archivo modificado:** `src/components/romaneo/index.tsx`
+
+**Cambios realizados:**
+- Reducido padding: `p-3` → `p-2`
+- Reducido tamaño de datos del animal: `text-xs` → `text-[10px]`
+- Reducido altura de botones DER/IZQ: `h-10` → `h-8`
+- Reducido altura de input de peso: `h-16` → `h-12`
+- Reducido tamaño de fuente del peso: `text-3xl` → `text-2xl`
+- Reducido altura de botones de dentición: `h-9` → `h-7`
+- Reducido altura de botones de acción: `h-12` → `h-10`
+- Reducido separadores: `my-2` → `my-1.5`
+- Layout más compacto sin scroll vertical en pantalla principal
+- Scroll solo en listado de garrones (panel lateral)
+
+Stage Summary:
+- **Rótulo pesaje individual corregido a 9x6cm** ✅
+- **Pantalla romaneo optimizada sin scroll vertical** ✅
+- **Layout compacto y funcional** ✅
+- **Lint sin errores en archivos modificados** ✅
+

@@ -52,11 +52,11 @@ function formatFechaLarga(): string {
 }
 
 /**
- * ETIQUETA ANIMAL EN PIE - 10cm x 5cm (HORIZONTAL/LANDSCAPE)
+ * ETIQUETA ANIMAL EN PIE - 9cm x 6cm (HORIZONTAL/LANDSCAPE)
  * Layout: Tropa arriba | N° Animal, KG Vivos, Código de barras abajo
  */
 export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
-  const printWindow = window.open('', '_blank', 'width=400,height=200')
+  const printWindow = window.open('', '_blank', 'width=360,height=240')
   if (!printWindow) return
   
   const pesoFormateado = animal.pesoVivo?.toLocaleString('es-AR') || '0'
@@ -72,7 +72,7 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
       <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">
       <style>
         @page { 
-          size: 100mm 50mm landscape;
+          size: 90mm 60mm landscape;
           margin: 0;
         }
         
@@ -84,8 +84,8 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
         
         body { 
           font-family: Arial, sans-serif;
-          width: 100mm;
-          height: 50mm;
+          width: 90mm;
+          height: 60mm;
           background: white;
           display: flex;
         }
@@ -104,20 +104,20 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 2mm 4mm;
+          padding: 2mm 3mm;
           border-bottom: 2px solid #000;
           background: #f0f0f0;
         }
         
         .tropa-label {
-          font-size: 10px;
+          font-size: 9px;
           font-weight: bold;
           text-transform: uppercase;
           color: #333;
         }
         
         .tropa-value {
-          font-size: 22px;
+          font-size: 18px;
           font-weight: 900;
           color: #000;
         }
@@ -136,7 +136,7 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
           justify-content: center;
           align-items: center;
           border-right: 2px solid #000;
-          padding: 2mm;
+          padding: 1mm;
         }
         
         .campo:last-child {
@@ -144,22 +144,22 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
         }
         
         .campo-label {
-          font-size: 8px;
+          font-size: 7px;
           font-weight: bold;
           text-transform: uppercase;
           color: #333;
-          margin-bottom: 1mm;
+          margin-bottom: 0.5mm;
         }
         
         .campo-value {
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 900;
           text-align: center;
         }
         
         /* Campo Número */
         .campo-numero .campo-value {
-          font-size: 24px;
+          font-size: 22px;
         }
         
         /* Campo Peso */
@@ -174,31 +174,31 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
         
         .campo-peso .campo-value {
           color: #fff;
-          font-size: 18px;
+          font-size: 16px;
         }
         
         .campo-peso .peso-unit {
-          font-size: 10px;
+          font-size: 9px;
           font-weight: bold;
         }
         
         /* Campo Código */
         .campo-codigo {
-          flex: 1.3;
+          flex: 1.2;
         }
         
         .barcode {
           font-family: 'Libre Barcode 39 Text', cursive;
-          font-size: 26px;
+          font-size: 22px;
           line-height: 1;
         }
         
         .barcode-text {
           font-family: 'Courier New', monospace;
-          font-size: 7px;
+          font-size: 6px;
           font-weight: bold;
           letter-spacing: 0.5px;
-          margin-top: 1mm;
+          margin-top: 0.5mm;
         }
         
         @media print { 

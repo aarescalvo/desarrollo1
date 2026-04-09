@@ -1,6 +1,6 @@
 /**
  * Utilidad de impresión DPL para impresoras Datamax Mark II
- * Formato de rótulo: 5cm alto x 10cm ancho (203 DPI)
+ * Formato de rótulo: 6cm alto x 9cm ancho (203 DPI)
  * 
  * DPL (Datamax Programming Language) - Comandos básicos:
  * <STX>L = Inicio de formato de etiqueta (STX = ASCII 2)
@@ -20,9 +20,9 @@
  * 2B5201 = Code 128, altura 52 dots
  */
 
-// Dimensiones del rótulo 5x10cm a 203 DPI
-const LABEL_WIDTH_MM = 100 // 10 cm = 100mm
-const LABEL_HEIGHT_MM = 50  // 5 cm = 50mm
+// Dimensiones del rótulo 6x9cm a 203 DPI
+const LABEL_WIDTH_MM = 90  // 9 cm = 90mm
+const LABEL_HEIGHT_MM = 60 // 6 cm = 60mm
 const DPI = 203
 
 // Conversión mm a dots (203 DPI)
@@ -38,7 +38,7 @@ interface DatosRotuloPesaje {
 
 /**
  * Genera código DPL para imprimir rótulo de pesaje individual
- * Formato: 5cm alto x 10cm ancho (etiqueta horizontal)
+ * Formato: 6cm alto x 9cm ancho (etiqueta horizontal)
  * 
  * Contenido:
  *   - Número de animal (RESALTADO - tamaño muy grande)
@@ -66,32 +66,32 @@ export function generarRotuloDPL(datos: DatosRotuloPesaje): string {
   dpl += 'C0010\n'            // Copies
 
   // ===== NÚMERO DE ANIMAL - MUY GRANDE Y RESALTADO =====
-  // Posición: centrado arriba
-  dpl += '1K0150\n'           // X position
+  // Posición: centrado arriba (etiqueta 9x6cm = 720x480 dots)
+  dpl += '1K0120\n'           // X position
   dpl += '1V0020\n'           // Y position
-  dpl += '2f440\n'            // Font size muy grande
+  dpl += '2f380\n'            // Font size grande para 9x6cm
   dpl += '3c0000\n'           // Color negro
   dpl += `eANIMAL #${numero}\n`
 
   // ===== TROPA =====
-  dpl += '1K0150\n'
-  dpl += '1V0120\n'
-  dpl += '2f220\n'            // Font size mediano
+  dpl += '1K0120\n'
+  dpl += '1V0140\n'
+  dpl += '2f200\n'            // Font size mediano
   dpl += '3c0000\n'
   dpl += `eTROPA: ${tropa}\n`
 
   // ===== PESO EN kg - DESTACADO =====
-  dpl += '1K0150\n'
-  dpl += '1V0180\n'
-  dpl += '2f330\n'            // Font size grande
+  dpl += '1K0120\n'
+  dpl += '1V0220\n'
+  dpl += '2f280\n'            // Font size grande
   dpl += '3c0000\n'
   dpl += `ePESO: ${peso} kg\n`
 
   // ===== CÓDIGO DE BARRAS CODE 128 =====
   // Posición: abajo, centrado
-  dpl += '1K0080\n'           // X position
-  dpl += '1V0260\n'           // Y position
-  dpl += '2B5201\n'           // Code 128, altura 52 dots
+  dpl += '1K0060\n'           // X position
+  dpl += '1V0320\n'           // Y position (más abajo para 6cm alto)
+  dpl += '2B4801\n'           // Code 128, altura 48 dots
   dpl += '3c0000\n'           // Color negro
   dpl += `e${codigoBarras}\n`
 
@@ -155,33 +155,33 @@ export function generarRotuloZPL(datos: DatosRotuloPesaje): string {
   const peso = String(datos.peso || '0')
   const codigoBarras = datos.codigo || `${tropa.replace(/\s/g, '')}-${numero.padStart(3, '0')}`
 
-  // ZPL para etiqueta 5x10cm (394 x 787 dots a 203 DPI)
+  // ZPL para etiqueta 6x9cm (480 x 720 dots a 203 DPI)
   let zpl = '^XA\n'
   
   // Configurar tamaño
-  zpl += '^PW787\n'          // Print width: 10cm
-  zpl += '^LL394\n'          // Label length: 5cm
-  zpl += '^LH20,20\n'        // Label home
+  zpl += '^PW720\n'          // Print width: 9cm
+  zpl += '^LL480\n'          // Label length: 6cm
+  zpl += '^LH15,15\n'        // Label home
 
   // NÚMERO DE ANIMAL - MUY GRANDE Y RESALTADO
-  zpl += '^FO30,20\n'
-  zpl += '^A0N,70,70\n'      // Font muy grande
+  zpl += '^FO20,15\n'
+  zpl += '^A0N,55,55\n'      // Font grande para 9x6cm
   zpl += `^FDANIMAL #${numero}^FS\n`
 
   // TROPA
-  zpl += '^FO30,110\n'
-  zpl += '^A0N,35,35\n'
+  zpl += '^FO20,90\n'
+  zpl += '^A0N,30,30\n'
   zpl += `^FDTROPA: ${tropa}^FS\n`
 
   // PESO
-  zpl += '^FO30,160\n'
-  zpl += '^A0N,45,45\n'
+  zpl += '^FO20,140\n'
+  zpl += '^A0N,40,40\n'
   zpl += `^FDPESO: ${peso} kg^FS\n`
 
   // CÓDIGO DE BARRAS Code 128
-  zpl += '^FO50,230\n'
-  zpl += '^BY2,3,50\n'       // Module width, ratio, height
-  zpl += '^BCN,50,Y,N,N\n'   // Code 128, normal orientation
+  zpl += '^FO30,210\n'
+  zpl += '^BY2,3,45\n'       // Module width, ratio, height
+  zpl += '^BCN,45,Y,N,N\n'   // Code 128, normal orientation
   zpl += `^FD${codigoBarras}^FS\n`
 
   // Fin

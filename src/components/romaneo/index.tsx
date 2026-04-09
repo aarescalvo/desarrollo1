@@ -853,93 +853,92 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
             {faenaTerminada ? (
               <CardContent className="flex-1 flex items-center justify-center">
                 <div className="text-center">
-                  <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-                  <h2 className="text-2xl font-bold text-stone-700 mb-2">Faena Completada</h2>
-                  <p className="text-stone-500 mb-4">Total: {mediasPesadas.length} medias - {getTotalKg().toFixed(1)} kg</p>
-                  <p className="text-sm text-stone-400">Cargue una nueva lista de faena para continuar</p>
+                  <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
+                  <h2 className="text-lg font-bold text-stone-700 mb-1">Faena Completada</h2>
+                  <p className="text-stone-500 text-sm">Total: {mediasPesadas.length} medias - {getTotalKg().toFixed(1)} kg</p>
                 </div>
               </CardContent>
             ) : (
-              <CardContent className="flex-1 flex flex-col p-3 overflow-hidden">
+              <CardContent className="flex-1 flex flex-col p-2 overflow-hidden">
                 {/* Datos del animal */}
                 <div className="flex-shrink-0">
                   {asignacionActual ? (
-                    <div className="grid grid-cols-4 gap-2 p-2 bg-stone-50 rounded-lg text-xs">
-                      <div><span className="text-stone-500 block">Tropa</span><span className="font-medium">{asignacionActual.tropaCodigo || '-'}</span></div>
-                      <div><span className="text-stone-500 block">Tipo</span><span className="font-medium">{asignacionActual.tipoAnimal || '-'}</span></div>
-                      <div><span className="text-stone-500 block">P.Vivo</span><span className="font-medium">{asignacionActual.pesoVivo?.toFixed(0) || '-'} kg</span></div>
-                      <div><span className="text-stone-500 block">Estado</span><span className="font-medium">{asignacionActual.tieneMediaDer && asignacionActual.tieneMediaIzq ? '✓' : asignacionActual.tieneMediaDer ? 'Falta Izq' : 'Falta Der'}</span></div>
+                    <div className="grid grid-cols-4 gap-1 p-1.5 bg-stone-50 rounded text-[10px]">
+                      <div><span className="text-stone-400">Tropa</span><br/><span className="font-medium">{asignacionActual.tropaCodigo || '-'}</span></div>
+                      <div><span className="text-stone-400">Tipo</span><br/><span className="font-medium">{asignacionActual.tipoAnimal || '-'}</span></div>
+                      <div><span className="text-stone-400">P.Vivo</span><br/><span className="font-medium">{asignacionActual.pesoVivo?.toFixed(0) || '-'}kg</span></div>
+                      <div><span className="text-stone-400">Estado</span><br/><span className="font-medium">{asignacionActual.tieneMediaDer && asignacionActual.tieneMediaIzq ? '✓' : asignacionActual.tieneMediaDer ? 'Falta Izq' : 'Falta Der'}</span></div>
                     </div>
                   ) : (
-                    <div className="p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700 text-xs">
+                    <div className="p-1.5 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-[10px]">
                       <AlertTriangle className="w-3 h-3 inline mr-1" />
                       No hay animal asignado al garrón {garronActual}
                     </div>
                   )}
                 </div>
 
-                <Separator className="my-2 flex-shrink-0" />
+                <Separator className="my-1.5 flex-shrink-0" />
 
                 {/* Indicador de modo edición */}
                 {modoEdicion && (
-                  <div className="bg-amber-100 border border-amber-300 rounded-lg p-2 text-center text-sm text-amber-700 flex-shrink-0">
-                    <Edit className="w-4 h-4 inline mr-1" />
-                    MODO EDICIÓN - Puede modificar cualquier peso
+                  <div className="bg-amber-100 border border-amber-300 rounded p-1 text-center text-xs text-amber-700 flex-shrink-0">
+                    <Edit className="w-3 h-3 inline mr-1" />
+                    MODO EDICIÓN
                   </div>
                 )}
 
                 {/* Lado actual */}
-                <div className="flex items-center justify-center gap-3 flex-shrink-0">
+                <div className="flex items-center justify-center gap-2 flex-shrink-0 mt-1">
                   <Button 
                     variant={ladoActual === 'DERECHA' ? 'default' : 'outline'} 
-                    className={`h-10 px-6 ${ladoActual === 'DERECHA' ? 'bg-blue-600 hover:bg-blue-700' : ''}`} 
+                    size="sm"
+                    className={`h-8 px-5 ${ladoActual === 'DERECHA' ? 'bg-blue-600 hover:bg-blue-700' : ''}`} 
                     onClick={() => setLadoActual('DERECHA')} 
                     disabled={!modoEdicion && asignacionActual?.tieneMediaDer}
                   >
                     DER {asignacionActual?.tieneMediaDer && <CheckCircle className="w-3 h-3 ml-1" />}
-                    {modoEdicion && asignacionActual?.tieneMediaDer && <span className="text-xs ml-1">(edit)</span>}
                   </Button>
                   <Button 
                     variant={ladoActual === 'IZQUIERDA' ? 'default' : 'outline'} 
-                    className={`h-10 px-6 ${ladoActual === 'IZQUIERDA' ? 'bg-pink-600 hover:bg-pink-700' : ''}`} 
+                    size="sm"
+                    className={`h-8 px-5 ${ladoActual === 'IZQUIERDA' ? 'bg-pink-600 hover:bg-pink-700' : ''}`} 
                     onClick={() => setLadoActual('IZQUIERDA')} 
                     disabled={!modoEdicion && (!asignacionActual?.tieneMediaDer || asignacionActual?.tieneMediaIzq)}
                   >
                     IZQ {asignacionActual?.tieneMediaIzq && <CheckCircle className="w-3 h-3 ml-1" />}
-                    {modoEdicion && asignacionActual?.tieneMediaIzq && <span className="text-xs ml-1">(edit)</span>}
                   </Button>
                 </div>
 
                 {/* Peso */}
-                <div className="text-center flex-shrink-0 my-2">
-                  <Label className="text-base">Peso (kg)</Label>
-                  <div className="flex items-center justify-center gap-2 mt-1">
-                    <Input type="number" value={pesoBalanza} onChange={(e) => setPesoBalanza(e.target.value)} className="text-3xl font-bold text-center h-16 w-40" placeholder="0" step="0.1" />
-                    <Button variant="outline" size="lg" onClick={handleCapturarPeso}><Scale className="w-5 h-5" /></Button>
+                <div className="text-center flex-shrink-0 my-1">
+                  <Label className="text-xs">Peso (kg)</Label>
+                  <div className="flex items-center justify-center gap-2 mt-0.5">
+                    <Input type="number" value={pesoBalanza} onChange={(e) => setPesoBalanza(e.target.value)} className="text-2xl font-bold text-center h-12 w-32" placeholder="0" step="0.1" />
+                    <Button variant="outline" size="icon" onClick={handleCapturarPeso} className="h-10 w-10"><Scale className="w-4 h-4" /></Button>
                   </div>
                 </div>
 
                 {/* Dentición */}
-                <div className="space-y-1 flex-shrink-0">
-                  <Label className="text-xs">Dentición {asignacionActual?.tieneMediaDer && <span className="text-amber-600">(Fijado)</span>}</Label>
-                  <div className="flex gap-1">
+                <div className="flex-shrink-0">
+                  <Label className="text-[10px]">Dentición {asignacionActual?.tieneMediaDer && <span className="text-amber-600">(Fijado)</span>}</Label>
+                  <div className="flex gap-1 mt-0.5">
                     {DIENTES.map((d) => (
-                      <Button key={d} variant={denticion === d ? 'default' : 'outline'} className={`flex-1 h-9 ${denticion === d ? 'bg-amber-500 hover:bg-amber-600' : ''}`} onClick={() => setDenticion(d)} disabled={asignacionActual?.tieneMediaDer && denticion !== '' && denticion !== d}>
+                      <Button key={d} variant={denticion === d ? 'default' : 'outline'} size="sm" className={`flex-1 h-7 text-xs ${denticion === d ? 'bg-amber-500 hover:bg-amber-600' : ''}`} onClick={() => setDenticion(d)} disabled={asignacionActual?.tieneMediaDer && denticion !== '' && denticion !== d}>
                         {d}
                       </Button>
                     ))}
                   </div>
                 </div>
 
-                <Separator className="my-2 flex-shrink-0" />
+                <Separator className="my-1.5 flex-shrink-0" />
 
                 {/* Botones de acción */}
                 <div className="grid grid-cols-2 gap-2 flex-shrink-0 mt-auto">
-                  <Button onClick={() => handleAceptarPeso(false)} disabled={saving || !pesoBalanza || parseFloat(pesoBalanza) <= 0 || !asignacionActual} className="h-12 bg-green-600 hover:bg-green-700">
+                  <Button size="sm" onClick={() => handleAceptarPeso(false)} disabled={saving || !pesoBalanza || parseFloat(pesoBalanza) <= 0 || !asignacionActual} className="h-10 bg-green-600 hover:bg-green-700">
                     <Printer className="w-4 h-4 mr-1" />
                     {saving ? '...' : 'ACEPTAR'}
                   </Button>
-                  <Button onClick={handleAbrirDecomiso} disabled={saving || !pesoBalanza || parseFloat(pesoBalanza) <= 0 || !asignacionActual} variant="outline" className="h-12 border-red-300 text-red-600 hover:bg-red-50">
+                  <Button size="sm" onClick={handleAbrirDecomiso} disabled={saving || !pesoBalanza || parseFloat(pesoBalanza) <= 0 || !asignacionActual} variant="outline" className="h-10 border-red-300 text-red-600 hover:bg-red-50">
                     <AlertOctagon className="w-4 h-4 mr-1" />
                     DECOMISO
                   </Button>
