@@ -4,15 +4,21 @@ import { db } from '@/lib/db'
 /**
  * POST - Crear rótulos DPL por defecto para Datamax Mark II
  * Formato: 6cm alto x 9cm ancho
+ * 
+ * EAN-128 (GS1-128) Application Identifiers:
+ * - (10) Número de lote/tropa
+ * - (21) Número de serie/animal
+ * - (3100) Peso neto en kg (sin decimales)
  */
 export async function POST(request: NextRequest) {
   try {
     const rotulosCreados = []
 
     // ========================================
-    // RÓTULO PESAJE INDIVIDUAL - Formato probado del sistema anterior
+    // RÓTULO PESAJE INDIVIDUAL - EAN-128 con Application Identifiers
+    // Layout: Tropa | N° Animal + Peso | Código EAN-128
     // ========================================
-    const rotuloPesajeIndividual = `n
+    const rotuloPesajeIndividualEAN128 = `n
 M1084
 O0220
 SO
@@ -23,18 +29,20 @@ PO
 pG
 SO
 A2
-1e8406900410065C{CODIGO_BARRAS}
+; === CÓDIGO DE BARRAS EAN-128 ===
+; Formato: (10)Tropa (21)Número (3100)Peso
+; FNC1 = 1e para indicar GS1-128
+1e8406900410065C{CODIGO_EAN128}
 ySE1
-1911A1200220110{CODIGO_BARRAS}
-1911A1201950010Año: 
-1911A1401940058{ANIO}
-1911A1201960215Tropa:
-1911A1401940270{TROPA}
-1911A1201660081N° de Animal:
-1911A1401650200{NUMERO}
-1911A1402320006{ESTABFAENADOR}
-1911A1201330010Tipificación:
-1911A2401260117{LETRA}
+; === TEXTO LEGIBLE ===
+1911A1200220110(10){TROPA} (21){NUMERO} (3100){PESO}kg
+; === TROPA ARRIBA ===
+1911A1201950010TROPA:
+1911A1401940058{TROPA}
+; === N° ANIMAL ===
+1911A1201660081N° Animal:
+1911A1601650200{NUMERO}
+; === PESO ===
 1911A1201360215Peso:
 1911A1801330270{PESO} kg
 Q0001
@@ -44,7 +52,7 @@ E
     // Verificar si ya existe
     const existentePesaje = await db.rotulo.findFirst({
       where: { 
-        codigo: 'PESAJE_INDIVIDUAL_DPL_V2',
+        codigo: 'PESAJE_INDIVIDUAL_EAN128_V3',
         tipoImpresora: 'DATAMAX'
       }
     })
@@ -62,26 +70,23 @@ E
 
       const nuevoRotulo = await db.rotulo.create({
         data: {
-          nombre: 'Pesaje Individual 9x6cm - Datamax (Formato Original)',
-          codigo: 'PESAJE_INDIVIDUAL_DPL_V2',
+          nombre: 'Pesaje Individual 9x6cm - EAN-128 (GS1)',
+          codigo: 'PESAJE_INDIVIDUAL_EAN128_V3',
           tipo: 'PESAJE_INDIVIDUAL',
           tipoImpresora: 'DATAMAX',
           modeloImpresora: 'MARK_II',
-          contenido: rotuloPesajeIndividual,
+          contenido: rotuloPesajeIndividualEAN128,
           ancho: 90,  // 9cm
           alto: 60,   // 6cm
           dpi: 203,
           activo: true,
           esDefault: true,
-          descripcion: 'Rótulo 9x6cm para pesaje individual - Formato probado del sistema anterior. Código de barras, año, tropa, N° animal, tipificación y peso.',
+          descripcion: 'Rótulo 9x6cm con código EAN-128 (GS1). Application Identifiers: (10) Tropa, (21) N° Animal, (3100) Peso kg.',
           variables: JSON.stringify([
-            { variable: 'CODIGO_BARRAS', campo: 'codigo_barras', descripcion: 'Código para barras (Tropa+Numero)' },
-            { variable: 'ANIO', campo: 'anio', descripcion: 'Año de faena' },
-            { variable: 'TROPA', campo: 'tropa', descripcion: 'Número de tropa' },
-            { variable: 'NUMERO', campo: 'numero', descripcion: 'Número de animal' },
-            { variable: 'ESTABFAENADOR', campo: 'estabfaenador', descripcion: 'Establecimiento faenador' },
-            { variable: 'LETRA', campo: 'letra', descripcion: 'Letra de tipificación' },
-            { variable: 'PESO', campo: 'peso', descripcion: 'Peso en kg' }
+            { variable: 'CODIGO_EAN128', campo: 'codigo_ean128', descripcion: 'Código EAN-128 completo (10+Tropa+21+Numero+3100+Peso)' },
+            { variable: 'TROPA', campo: 'tropa', descripcion: 'Número de tropa (sin espacios, max 20 chars)' },
+            { variable: 'NUMERO', campo: 'numero', descripcion: 'Número de animal (3 dígitos)' },
+            { variable: 'PESO', campo: 'peso', descripcion: 'Peso en kg (sin decimales)' }
           ])
         }
       })
@@ -154,7 +159,7 @@ E
     }
 
     // ========================================
-    // RÓTULO MEDIA RES - Para faena (8x12cm)
+    // RÓTULO MEDIA RES - Para faena (8x12cm) con EAN-128
     // ========================================
     const rotuloMediaRes = `
 <STX>L
@@ -205,19 +210,19 @@ eLado: {LADO}
 3c0000
 e{FECHA}
 
-; Código de barras
+; Código de barras EAN-128
 1K0100
 1V0350
 2B4201
 3c0000
-e{CODIGO_BARRAS}
+e{CODIGO_EAN128}
 
 E
 `.trim()
 
     const existenteMediaRes = await db.rotulo.findFirst({
       where: { 
-        codigo: 'MEDIA_RES_DPL_V2',
+        codigo: 'MEDIA_RES_EAN128_V3',
         tipoImpresora: 'DATAMAX'
       }
     })
@@ -235,8 +240,8 @@ E
 
       const nuevoRotulo = await db.rotulo.create({
         data: {
-          nombre: 'Media Res 8x12cm + Cód.Barras - Datamax',
-          codigo: 'MEDIA_RES_DPL_V2',
+          nombre: 'Media Res 8x12cm + EAN-128 - Datamax',
+          codigo: 'MEDIA_RES_EAN128_V3',
           tipo: 'MEDIA_RES',
           tipoImpresora: 'DATAMAX',
           modeloImpresora: 'MARK_II',
@@ -247,14 +252,14 @@ E
           activo: true,
           esDefault: true,
           diasConsumo: 30,
-          descripcion: 'Rótulo para medias reses con garrón, tropa, peso, lado y código de barras.',
+          descripcion: 'Rótulo para medias reses con código EAN-128 (GS1). Garrón, tropa, peso, lado y código de barras.',
           variables: JSON.stringify([
             { variable: 'GARRON', campo: 'garron', descripcion: 'Número de garrón' },
             { variable: 'TROPA', campo: 'tropa', descripcion: 'Código de tropa' },
             { variable: 'PESO', campo: 'peso', descripcion: 'Peso en kg' },
             { variable: 'LADO', campo: 'lado', descripcion: 'Lado (D/I)' },
             { variable: 'FECHA', campo: 'fecha', descripcion: 'Fecha' },
-            { variable: 'CODIGO_BARRAS', campo: 'codigo_barras', descripcion: 'Código para barras' }
+            { variable: 'CODIGO_EAN128', campo: 'codigo_ean128', descripcion: 'Código EAN-128 completo' }
           ])
         }
       })
@@ -263,7 +268,7 @@ E
 
     return NextResponse.json({
       success: true,
-      message: `${rotulosCreados.length} rótulos DPL creados para Datamax Mark II`,
+      message: `${rotulosCreados.length} rótulos DPL creados para Datamax Mark II con EAN-128`,
       rotulos: rotulosCreados.map(r => ({
         id: r.id,
         nombre: r.nombre,

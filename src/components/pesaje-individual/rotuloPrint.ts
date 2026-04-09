@@ -53,19 +53,31 @@ function formatFechaLarga(): string {
 
 /**
  * ETIQUETA ANIMAL EN PIE - 9cm x 6cm (HORIZONTAL/LANDSCAPE)
- * Layout: Tropa arriba | N° Animal + KG Vivos medio | Código de barras CODE128 abajo (ancho completo)
+ * Layout: Tropa arriba | N° Animal + KG Vivos medio | Código de barras EAN-128 abajo (ancho completo)
  * 
- * El código de barras se genera con JsBarcode en formato CODE128 (compatible con GS1-128/EAN-128)
+ * EAN-128 (GS1-128) con Application Identifiers:
+ * - (10) Número de lote/tropa
+ * - (21) Número de serie/animal
+ * - (3100) Peso neto en kg (sin decimales)
  */
 export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
   const printWindow = window.open('', '_blank', 'width=360,height=240')
   if (!printWindow) return
   
   const pesoFormateado = animal.pesoVivo?.toLocaleString('es-AR') || '0'
-  const codigoCompleto = animal.codigo || `${tropaCodigo}-${String(animal.numero).padStart(3, '0')}`
+  const pesoKg = Math.round(animal.pesoVivo || 0)
+  const numeroAnimal = String(animal.numero).padStart(3, '0')
+  const codigoCompleto = animal.codigo || `${tropaCodigo}-${numeroAnimal}`
   
-  // Código de barras limpio (sin guiones para mejor lectura)
-  const codigoBarrasLimpio = codigoCompleto.replace(/[^A-Za-z0-9]/g, '')
+  // Construir código EAN-128 (GS1-128) con Application Identifiers
+  // Formato: FNC1 + AI(10)Lote + AI(21)Serie + AI(3100)Peso
+  // Para JsBarcode, FNC1 se representa como carácter especial
+  const tropaLimpia = tropaCodigo.replace(/[^A-Za-z0-9]/g, '').substring(0, 20) // Max 20 chars para AI(10)
+  const pesoStr = String(pesoKg).padStart(6, '0') // 6 dígitos para AI(3100)
+  
+  // EAN-128: El carácter FNC1 se representa como ñ en Code128 C para indicar inicio GS1
+  // Formato: 10 + tropa + 21 + numero + 3100 + peso
+  const codigoEAN128 = `10${tropaLimpia}21${numeroAnimal}3100${pesoStr}`
   
   printWindow.document.write(`
     <!DOCTYPE html>
@@ -187,7 +199,7 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
           font-weight: bold;
         }
         
-        /* FILA 3: Código de barras - ANCHO COMPLETO */
+        /* FILA 3: Código de barras EAN-128 - ANCHO COMPLETO */
         .fila-codigo {
           flex: 1;
           display: flex;
@@ -197,16 +209,17 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
           padding: 1mm 2mm;
         }
         
-        .barcode-canvas {
-          max-width: 100%;
-          height: auto;
+        .barcode-label {
+          font-size: 6px;
+          color: #666;
+          margin-bottom: 0.5mm;
         }
         
         .barcode-text {
           font-family: 'Courier New', monospace;
-          font-size: 7px;
+          font-size: 6px;
           font-weight: bold;
-          letter-spacing: 1px;
+          letter-spacing: 0.5px;
           margin-top: 0.5mm;
         }
         
@@ -228,7 +241,7 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
           <!-- N° Animal -->
           <div class="campo campo-numero">
             <div class="campo-label">N° Animal</div>
-            <div class="campo-value">${String(animal.numero).padStart(3, '0')}</div>
+            <div class="campo-value">${numeroAnimal}</div>
           </div>
           
           <!-- KG Vivos -->
@@ -238,23 +251,24 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
           </div>
         </div>
         
-        <!-- FILA 3: Código de barras CODE128 - ANCHO COMPLETO -->
+        <!-- FILA 3: Código de barras EAN-128 - ANCHO COMPLETO -->
         <div class="fila-codigo">
+          <div class="barcode-label">EAN-128 (GS1)</div>
           <svg id="barcode"></svg>
-          <div class="barcode-text">${codigoCompleto}</div>
+          <div class="barcode-text">(10)${tropaLimpia} (21)${numeroAnimal} (3100)${pesoKg}kg</div>
         </div>
       </div>
       
       <script>
-        // Generar código de barras CODE128 con JsBarcode
+        // Generar código de barras EAN-128 (GS1-128) con JsBarcode
+        // El formato GS1-128 usa FNC1 como primer carácter
         try {
-          JsBarcode("#barcode", "${codigoBarrasLimpio}", {
-            format: "CODE128",
-            width: 2,
-            height: 50,
+          JsBarcode("#barcode", "${codigoEAN128}", {
+            format: "CODE128C",  // CODE128C es más eficiente para números
+            width: 1.5,
+            height: 40,
             displayValue: false,
             margin: 0,
-            fontSize: 12,
             background: "transparent"
           });
         } catch(e) {
@@ -679,11 +693,14 @@ export function imprimirTicketPesajeA4({ tropa, animales, choferNombre, patente 
 
 /**
  * Vista previa del rótulo para diálogo
- * Layout: Tropa | N° Animal + KG Vivos | Código de barras CODE128
+ * Layout: Tropa | N° Animal + KG Vivos | Código de barras EAN-128
  */
 export function getRotuloPreviewHTML(animal: Animal, tropaCodigo: string): string {
   const pesoFormateado = animal.pesoVivo?.toLocaleString('es-AR') || '0'
-  const codigoCompleto = animal.codigo || `${tropaCodigo}-${String(animal.numero).padStart(3, '0')}`
+  const pesoKg = Math.round(animal.pesoVivo || 0)
+  const numeroAnimal = String(animal.numero).padStart(3, '0')
+  const codigoCompleto = animal.codigo || `${tropaCodigo}-${numeroAnimal}`
+  const tropaLimpia = tropaCodigo.replace(/[^A-Za-z0-9]/g, '').substring(0, 20)
   
   return `
     <div class="border-2 border-black bg-white" style="width: 270px; height: 180px; display: flex; flex-direction: column;">
@@ -698,7 +715,7 @@ export function getRotuloPreviewHTML(animal: Animal, tropaCodigo: string): strin
         <!-- N° Animal -->
         <div class="flex-1 flex flex-col justify-center items-center border-r-2 border-black py-2">
           <div class="text-[7px] font-bold uppercase">N° Animal</div>
-          <div class="text-2xl font-black">${String(animal.numero).padStart(3, '0')}</div>
+          <div class="text-2xl font-black">${numeroAnimal}</div>
         </div>
         
         <!-- KG Vivos -->
@@ -708,75 +725,60 @@ export function getRotuloPreviewHTML(animal: Animal, tropaCodigo: string): strin
         </div>
       </div>
       
-      <!-- FILA 3: Código de barras CODE128 -->
+      <!-- FILA 3: Código de barras EAN-128 -->
       <div class="flex-1 flex flex-col justify-center items-center py-1">
-        <div class="text-[8px] text-gray-500 mb-0.5">CODE128</div>
+        <div class="text-[7px] text-gray-500 mb-0.5">EAN-128 (GS1)</div>
         <div class="w-full px-2 flex justify-center">
-          <svg class="max-w-full" style="height: 35px;">
+          <svg class="max-w-full" style="height: 30px;">
             <!-- Representación visual aproximada del código de barras -->
-            <rect x="0" y="0" width="2" height="35" fill="black"/>
-            <rect x="4" y="0" width="1" height="35" fill="black"/>
-            <rect x="7" y="0" width="2" height="35" fill="black"/>
-            <rect x="11" y="0" width="1" height="35" fill="black"/>
-            <rect x="14" y="0" width="3" height="35" fill="black"/>
-            <rect x="19" y="0" width="1" height="35" fill="black"/>
-            <rect x="22" y="0" width="2" height="35" fill="black"/>
-            <rect x="26" y="0" width="1" height="35" fill="black"/>
-            <rect x="29" y="0" width="2" height="35" fill="black"/>
-            <rect x="33" y="0" width="1" height="35" fill="black"/>
-            <rect x="36" y="0" width="3" height="35" fill="black"/>
-            <rect x="41" y="0" width="1" height="35" fill="black"/>
-            <rect x="44" y="0" width="2" height="35" fill="black"/>
-            <rect x="48" y="0" width="1" height="35" fill="black"/>
-            <rect x="51" y="0" width="2" height="35" fill="black"/>
-            <rect x="55" y="0" width="1" height="35" fill="black"/>
-            <rect x="58" y="0" width="3" height="35" fill="black"/>
-            <rect x="63" y="0" width="1" height="35" fill="black"/>
-            <rect x="66" y="0" width="2" height="35" fill="black"/>
-            <rect x="70" y="0" width="1" height="35" fill="black"/>
-            <rect x="73" y="0" width="2" height="35" fill="black"/>
-            <rect x="77" y="0" width="1" height="35" fill="black"/>
-            <rect x="80" y="0" width="3" height="35" fill="black"/>
-            <rect x="85" y="0" width="1" height="35" fill="black"/>
-            <rect x="88" y="0" width="2" height="35" fill="black"/>
-            <rect x="92" y="0" width="1" height="35" fill="black"/>
-            <rect x="95" y="0" width="2" height="35" fill="black"/>
-            <rect x="99" y="0" width="1" height="35" fill="black"/>
-            <rect x="102" y="0" width="3" height="35" fill="black"/>
-            <rect x="107" y="0" width="1" height="35" fill="black"/>
-            <rect x="110" y="0" width="2" height="35" fill="black"/>
-            <rect x="114" y="0" width="1" height="35" fill="black"/>
-            <rect x="117" y="0" width="2" height="35" fill="black"/>
-            <rect x="121" y="0" width="1" height="35" fill="black"/>
-            <rect x="124" y="0" width="3" height="35" fill="black"/>
-            <rect x="129" y="0" width="1" height="35" fill="black"/>
-            <rect x="132" y="0" width="2" height="35" fill="black"/>
-            <rect x="136" y="0" width="1" height="35" fill="black"/>
-            <rect x="139" y="0" width="2" height="35" fill="black"/>
-            <rect x="143" y="0" width="1" height="35" fill="black"/>
-            <rect x="146" y="0" width="3" height="35" fill="black"/>
-            <rect x="151" y="0" width="1" height="35" fill="black"/>
-            <rect x="154" y="0" width="2" height="35" fill="black"/>
-            <rect x="158" y="0" width="1" height="35" fill="black"/>
-            <rect x="161" y="0" width="2" height="35" fill="black"/>
-            <rect x="165" y="0" width="1" height="35" fill="black"/>
-            <rect x="168" y="0" width="3" height="35" fill="black"/>
-            <rect x="173" y="0" width="1" height="35" fill="black"/>
-            <rect x="176" y="0" width="2" height="35" fill="black"/>
-            <rect x="180" y="0" width="1" height="35" fill="black"/>
-            <rect x="183" y="0" width="2" height="35" fill="black"/>
-            <rect x="187" y="0" width="1" height="35" fill="black"/>
-            <rect x="190" y="0" width="3" height="35" fill="black"/>
-            <rect x="195" y="0" width="1" height="35" fill="black"/>
-            <rect x="198" y="0" width="2" height="35" fill="black"/>
-            <rect x="202" y="0" width="1" height="35" fill="black"/>
-            <rect x="205" y="0" width="2" height="35" fill="black"/>
-            <rect x="209" y="0" width="2" height="35" fill="black"/>
-            <rect x="213" y="0" width="1" height="35" fill="black"/>
-            <rect x="216" y="0" width="3" height="35" fill="black"/>
+            <rect x="0" y="0" width="2" height="30" fill="black"/>
+            <rect x="4" y="0" width="1" height="30" fill="black"/>
+            <rect x="7" y="0" width="2" height="30" fill="black"/>
+            <rect x="11" y="0" width="1" height="30" fill="black"/>
+            <rect x="14" y="0" width="3" height="30" fill="black"/>
+            <rect x="19" y="0" width="1" height="30" fill="black"/>
+            <rect x="22" y="0" width="2" height="30" fill="black"/>
+            <rect x="26" y="0" width="1" height="30" fill="black"/>
+            <rect x="29" y="0" width="2" height="30" fill="black"/>
+            <rect x="33" y="0" width="1" height="30" fill="black"/>
+            <rect x="36" y="0" width="3" height="30" fill="black"/>
+            <rect x="41" y="0" width="1" height="30" fill="black"/>
+            <rect x="44" y="0" width="2" height="30" fill="black"/>
+            <rect x="48" y="0" width="1" height="30" fill="black"/>
+            <rect x="51" y="0" width="2" height="30" fill="black"/>
+            <rect x="55" y="0" width="1" height="30" fill="black"/>
+            <rect x="58" y="0" width="3" height="30" fill="black"/>
+            <rect x="63" y="0" width="1" height="30" fill="black"/>
+            <rect x="66" y="0" width="2" height="30" fill="black"/>
+            <rect x="70" y="0" width="1" height="30" fill="black"/>
+            <rect x="73" y="0" width="2" height="30" fill="black"/>
+            <rect x="77" y="0" width="1" height="30" fill="black"/>
+            <rect x="80" y="0" width="3" height="30" fill="black"/>
+            <rect x="85" y="0" width="1" height="30" fill="black"/>
+            <rect x="88" y="0" width="2" height="30" fill="black"/>
+            <rect x="92" y="0" width="1" height="30" fill="black"/>
+            <rect x="95" y="0" width="2" height="30" fill="black"/>
+            <rect x="99" y="0" width="1" height="30" fill="black"/>
+            <rect x="102" y="0" width="3" height="30" fill="black"/>
+            <rect x="107" y="0" width="1" height="30" fill="black"/>
+            <rect x="110" y="0" width="2" height="30" fill="black"/>
+            <rect x="114" y="0" width="1" height="30" fill="black"/>
+            <rect x="117" y="0" width="2" height="30" fill="black"/>
+            <rect x="121" y="0" width="1" height="30" fill="black"/>
+            <rect x="124" y="0" width="3" height="30" fill="black"/>
+            <rect x="129" y="0" width="1" height="30" fill="black"/>
+            <rect x="132" y="0" width="2" height="30" fill="black"/>
+            <rect x="136" y="0" width="1" height="30" fill="black"/>
+            <rect x="139" y="0" width="2" height="30" fill="black"/>
+            <rect x="143" y="0" width="1" height="30" fill="black"/>
+            <rect x="146" y="0" width="3" height="30" fill="black"/>
+            <rect x="151" y="0" width="1" height="30" fill="black"/>
+            <rect x="154" y="0" width="2" height="30" fill="black"/>
+            <rect x="158" y="0" width="2" height="30" fill="black"/>
+            <rect x="162" y="0" width="1" height="30" fill="black"/>
           </svg>
         </div>
-        <div class="text-[7px] font-mono font-bold mt-0.5">${codigoCompleto}</div>
+        <div class="text-[6px] font-mono font-bold mt-0.5">(10)${tropaLimpia} (21)${numeroAnimal} (3100)${pesoKg}kg</div>
       </div>
     </div>
   `

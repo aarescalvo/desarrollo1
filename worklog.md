@@ -1167,8 +1167,8 @@ Al terminar CADA sesión de trabajo, verificar:
 - **Minor (0.X.0)**: Nuevas funcionalidades
 - **Patch (0.0.X)**: Bug fixes, mejoras menores
 
-### Versión actual: **3.7.26**
-### Próxima versión sugerida: **3.7.27**
+### Versión actual: **3.7.27**
+### Próxima versión sugerida: **3.7.28**
 
 ---
 Task ID: 1604
@@ -3645,4 +3645,69 @@ Stage Summary:
 - **Pantalla romaneo optimizada sin scroll vertical** ✅
 - **Layout compacto y funcional** ✅
 - **Lint sin errores en archivos modificados** ✅
+
+---
+Task ID: 1605
+Agent: main
+Task: Reorganizar rótulo ingreso hacienda e implementar EAN-128
+
+Work Log:
+
+#### 1. Reorganización del Rótulo de Ingreso de Hacienda
+**Problema:** El rótulo tenía 3 cuadros en la fila inferior (N° Animal | KG Vivos | Código), pero el código de barras no se imprimía correctamente
+
+**Nuevo Layout:**
+```
+┌─────────────────────────────────────┐
+│ TROPA                        1234   │  ← Fila 1: Tropa (ancho completo)
+├──────────────────┬──────────────────┤
+│   N° Animal      │    KG Vivos      │  ← Fila 2: 2 cuadros
+│      001         │    450 kg        │
+├──────────────────┴──────────────────┤
+│    EAN-128 (GS1)                    │  ← Fila 3: Código de barras
+│    ▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌                 │     (ancho completo)
+│    (10)Tropa (21)001 (3100)450kg    │
+└─────────────────────────────────────┘
+```
+
+**Archivos modificados:**
+- `src/components/pesaje-individual/rotuloPrint.ts` - Función `imprimirRotulo()` y `getRotuloPreviewHTML()`
+
+#### 2. Implementación de EAN-128 (GS1-128)
+**Formato anterior:** Code 39 simple (fuente simulada)
+
+**Formato nuevo:** EAN-128 con Application Identifiers estándar GS1:
+- **(10)** - Número de lote/tropa
+- **(21)** - Número de serie/animal  
+- **(3100)** - Peso neto en kg (sin decimales)
+
+**Estructura del código:**
+```
+10 + TROPA + 21 + NUMERO + 3100 + PESO
+Ejemplo: 10B202600100121001310000450
+```
+
+**Tecnología:**
+- HTML: JsBarcode library para generar código de barras real en SVG
+- DPL: Comando `1e` para FNC1 (GS1-128) en Datamax Mark II
+
+#### 3. Actualización de Plantillas DPL
+**Archivo:** `src/app/api/rotulos/init-dpl/route.ts`
+
+**Nuevos rótulos creados:**
+- `PESAJE_INDIVIDUAL_EAN128_V3` - Pesaje individual con EAN-128
+- `MEDIA_RES_EAN128_V3` - Media res con EAN-128
+
+**Variables actualizadas:**
+- `CODIGO_EAN128` - Código completo con AIs
+- `TROPA` - Número de tropa (sin espacios)
+- `NUMERO` - Número de animal (3 dígitos)
+- `PESO` - Peso en kg (sin decimales)
+
+Stage Summary:
+- **Rótulo reorganizado a 3 filas** ✅
+- **EAN-128 implementado con AIs estándar** ✅
+- **JsBarcode para código de barras real en HTML** ✅
+- **Plantillas DPL actualizadas para Datamax** ✅
+- **Versión actualizada a 3.7.27** ✅
 
