@@ -3711,3 +3711,35 @@ Stage Summary:
 - **Plantillas DPL actualizadas para Datamax** ✅
 - **Versión actualizada a 3.7.27** ✅
 
+
+---
+Task ID: 1605
+Agent: main
+Task: Crear script para actualizar desde GitHub
+
+Work Log:
+
+#### 1. Script Creado
+**Archivo:** `scripts/actualizar-desde-github.bat`
+- Script interactivo para Windows
+- Permite elegir entre repositorio DESARROLLO o PRODUCCION
+- Realiza backup automático antes de actualizar
+- Pasos: detener servidor → backup → fetch → reset → install → db:push
+
+#### 2. Características del Script
+- Menú de selección de repositorio
+- Verificación de que git está instalado
+- Configuración automática de remotos si no existen
+- Stash de cambios locales antes de actualizar
+- Muestra versión actual al finalizar
+
+#### 3. Repositorios Configurados
+| Remoto | URL | Uso |
+|--------|-----|-----|
+| desarrollo | https://github.com/aarescalvo/desarrollo1.git | SQLite |
+| produccion | https://github.com/aarescalvo/produccion1.git | PostgreSQL |
+
+Stage Summary:
+- **Script actualizar-desde-github.bat creado** ✅
+- **Push a ambos repositorios** (pendiente)
+
