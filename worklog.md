@@ -3869,3 +3869,22 @@ Stage Summary:
 - **VersiÃ³n actualizada a 3.7.30** âœ…
 - **Esperando especificaciones del usuario**
 
+---
+Task ID: 1700
+Agent: main
+Task: Implementar rótulo de media res con código de barras CODE128
+
+Work Log:
+- Rótulo de media res rediseñado según especificaciones ZPL
+- Tamaño: 100mm × 150mm
+- Logos SOLEMAR y SENASA incluidos
+- Código de barras CODE128 con formato: TROPA-GARRON-LADO-SIGLA
+- 3 rótulos por media res: A (Asado), D (Delantero), T (Trasero)
+- Fecha de vencimiento: +13 días
+- Datos SENASA incluidos
+
+Stage Summary:
+- Rótulo media res implementado ?
+- Código de barras CODE128 ?
+- Versión 3.7.31 ?
+

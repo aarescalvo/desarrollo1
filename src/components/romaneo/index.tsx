@@ -395,52 +395,105 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
     }
   }
 
-  const imprimirRotuloHTML = (garron: number, lado: 'DERECHA' | 'IZQUIERDA', peso: number, esDecomiso: boolean = false) => {
+    const imprimirRotuloHTML = (garron: number, lado: 'DERECHA' | 'IZQUIERDA', peso: number, esDecomiso: boolean = false) => {
     const printWindow = window.open('', '_blank', 'width=400,height=600')
     if (!printWindow) {
-      toast.error('No se pudo abrir ventana de impresi√≥n')
+      toast.error('No se pudo abrir ventana de impresiÛn')
       return
     }
-    
+
     const tipificador = tipificadores.find(t => t.id === tipificadorId)
-    const camara = camaras.find(c => c.id === camaraId)
     const fecha = new Date()
+    const fechaVencimiento = new Date(fecha)
+    fechaVencimiento.setDate(fechaVencimiento.getDate() + 13)
     
+    const titular = asignacionActual?.productorNombre || 'SOLEMAR ALIMENTARIA'
+    const cuit = asignacionActual?.productorCuit || '20-12345678-9'
+    const matricula = asignacionActual?.productorMatricula || '1234'
+    const senasaHabilitacion = '4113'
+    const senasaEstablecimiento = '4113'
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
       <head>
-        <title>R√≥tulos Garr√≥n ${garron} - ${lado}</title>
+        <title>RÛtulos Media Res - GarrÛn ${garron}</title>
         <style>
-          @page { size: 100mm 70mm; margin: 3mm; }
-          body { font-family: Arial, sans-serif; padding: 5px; margin: 0; }
-          .rotulo { border: 2px solid black; padding: 5px; margin-bottom: 3mm; page-break-after: always; width: 94mm; height: 64mm; box-sizing: border-box; ${esDecomiso ? 'background: #fee2e2;' : ''} }
-          .header { text-align: center; border-bottom: 1px solid black; padding-bottom: 3px; margin-bottom: 3px; }
-          .empresa { font-size: 14px; font-weight: bold; }
-          .campo { display: flex; justify-content: space-between; padding: 1px 0; font-size: 11px; }
-          .sigla { font-size: 28px; font-weight: bold; text-align: center; background: #f0f0f0; padding: 3px; margin: 3px 0; }
-          .lado { font-size: 12px; text-align: center; font-weight: bold; background: ${lado === 'DERECHA' ? '#e3f2fd' : '#fce4ec'}; padding: 2px; }
-          .decomiso { background: #dc2626; color: white; text-align: center; font-weight: bold; padding: 2px; font-size: 12px; }
+          @page { size: 100mm 150mm; margin: 2mm; }
+          body { font-family: Arial, sans-serif; padding: 0; margin: 0; }
+          .rotulo { border: 2px solid black; padding: 3mm; margin-bottom: 2mm; page-break-after: always; width: 96mm; height: 146mm; box-sizing: border-box; ${esDecomiso ? 'background: #fee2e2;' : ''} display: flex; flex-direction: column; }
+          .logos { display: flex; justify-content: space-between; align-items: center; padding: 2mm; border-bottom: 1px solid black; min-height: 20mm; }
+          .logo { height: 18mm; max-width: 45mm; object-fit: contain; }
+          .logo-placeholder { font-size: 14px; font-weight: bold; color: #333; padding: 2mm; }
+          .datos-cliente { padding: 2mm; border-bottom: 1px solid black; }
+          .datos-cliente .fila { display: flex; font-size: 11px; margin: 1mm 0; }
+          .datos-cliente .label { font-weight: bold; width: 28mm; }
+          .identificacion { display: flex; flex-wrap: wrap; padding: 2mm; border-bottom: 1px solid black; }
+          .identificacion .campo { width: 50%; font-size: 11px; margin: 1mm 0; }
+          .identificacion .valor { font-weight: bold; font-size: 13px; }
+          .peso-fecha { display: flex; flex-wrap: wrap; padding: 2mm; border-bottom: 1px solid black; background: #f5f5f5; }
+          .peso-fecha .campo { width: 50%; font-size: 11px; margin: 1mm 0; }
+          .peso-fecha .valor { font-weight: bold; font-size: 13px; }
+          .peso { background: #1a1a1a; color: white; padding: 3mm; text-align: center; }
+          .peso .kg { font-size: 28px; font-weight: bold; }
+          .sigla-container { display: flex; align-items: center; justify-content: center; padding: 2mm; border-bottom: 1px solid black; }
+          .sigla-grande { font-size: 72px; font-weight: bold; text-align: center; width: 60mm; background: ${lado === 'DERECHA' ? '#e3f2fd' : '#fce4ec'}; border: 2px solid ${lado === 'DERECHA' ? '#1976d2' : '#c2185b'}; }
+          .sigla-label { text-align: center; font-size: 14px; font-weight: bold; padding: 1mm; }
+          .barcode-container { padding: 3mm; text-align: center; border-bottom: 1px solid black; background: white; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
+          .barcode-text { font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; margin-top: 2mm; }
+          .barcode-fallback { font-family: 'Courier New', monospace; font-size: 16px; letter-spacing: 3px; padding: 5mm; background: white; border: 1px solid #ccc; }
+          .senasa { padding: 2mm; font-size: 10px; text-align: center; background: #f9f9f9; }
+          .decomiso-banner { background: #dc2626; color: white; text-align: center; font-weight: bold; padding: 2mm; font-size: 16px; }
         </style>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
       </head>
       <body>
-        ${SIGLAS.map(sigla => `
+        ${SIGLAS.map(sigla => {
+          const codigoBarras = `${asignacionActual?.tropaCodigo || 'T000'}-${String(garron).padStart(3, '0')}-${lado.substring(0,3).toUpperCase()}-${sigla}`;
+          const siglaNombre = sigla === 'A' ? 'ASADO' : sigla === 'T' ? 'TRASERO' : 'DELANTERO';
+          return `
           <div class="rotulo">
-            <div class="header"><div class="empresa">SOLEMAR ALIMENTARIA</div><div style="font-size: 9px;">Media Res - Faena</div></div>
-            ${esDecomiso ? '<div class="decomiso">‚ö†Ô∏è DECOMISO ‚ö†Ô∏è</div>' : ''}
-            <div class="lado">${lado === 'DERECHA' ? 'MEDIA DERECHA' : 'MEDIA IZQUIERDA'}</div>
-            <div class="campo"><span>Garr√≥n:</span><span style="font-weight: bold; font-size: 14px;">${garron}</span></div>
-            <div class="campo"><span>Tropa:</span><span>${asignacionActual?.tropaCodigo || '-'}</span></div>
-            <div class="campo"><span>Tipo:</span><span>${asignacionActual?.tipoAnimal || '-'}</span></div>
-            <div class="campo"><span>Peso:</span><span style="font-weight: bold;">${peso.toFixed(1)} kg</span></div>
-            <div class="campo"><span>C√°mara:</span><span>${camara?.nombre || '-'}</span></div>
-            ${denticion ? `<div class="campo"><span>Dentici√≥n:</span><span>${denticion} dientes</span></div>` : ''}
-            <div class="sigla">${sigla}</div>
-            <div style="text-align: center; font-size: 10px;">${sigla === 'A' ? 'Asado' : sigla === 'T' ? 'Trasero' : 'Delantero'}</div>
-            ${tipificador ? `<div style="text-align: center; font-size: 8px; margin-top: 2px;">Tip.: ${tipificador.nombre} ${tipificador.apellido}</div>` : ''}
+            ${esDecomiso ? '<div class="decomiso-banner">?? DECOMISO ??</div>' : ''}
+            <div class="logos">
+              <img src="/logos/logo-solemar.jpg" class="logo" alt="SOLEMAR" onerror="this.outerHTML='<span class=\\'logo-placeholder\\'>SOLEMAR</span>'">
+              <img src="/logos/logo-senasa.jpg" class="logo" alt="SENASA" onerror="this.outerHTML='<span class=\\'logo-placeholder\\'>SENASA</span>'">
+            </div>
+            <div class="datos-cliente">
+              <div class="fila"><span class="label">TITULAR:</span><span>${titular}</span></div>
+              <div class="fila"><span class="label">CUIT:</span><span>${cuit}</span></div>
+              <div class="fila"><span class="label">MATRÕCULA:</span><span>${matricula}</span></div>
+            </div>
+            <div class="identificacion">
+              <div class="campo">TROPA: <span class="valor">${asignacionActual?.tropaCodigo || '-'}</span></div>
+              <div class="campo">GARR”N: <span class="valor">${garron}</span></div>
+              <div class="campo">LADO: <span class="valor">${lado === 'DERECHA' ? 'DERECHA' : 'IZQUIERDA'}</span></div>
+              <div class="campo">CLASIF: <span class="valor">${siglaNombre}</span></div>
+            </div>
+            <div class="peso"><div class="kg">${peso.toFixed(1)} KG</div></div>
+            <div class="peso-fecha">
+              <div class="campo">FECHA: <span class="valor">${formatearFecha(fecha)}</span></div>
+              <div class="campo">VTO: <span class="valor">${formatearFecha(fechaVencimiento)}</span></div>
+            </div>
+            <div class="sigla-container"><div class="sigla-grande">${sigla}</div></div>
+            <div class="sigla-label">${siglaNombre}</div>
+            <div class="barcode-container">
+              <svg id="barcode-${sigla}"></svg>
+              <div class="barcode-text">${codigoBarras}</div>
+            </div>
+            <div class="senasa">
+              <div>SENASA HabilitaciÛn N∞: ${senasaHabilitacion}</div>
+              <div>Establecimiento: ${senasaEstablecimiento}</div>
+              ${tipificador ? `<div>Tipificador: ${tipificador.nombre} ${tipificador.apellido}</div>` : ''}
+            </div>
           </div>
-        `).join('')}
-        <script>window.onload = function() { window.print(); window.onafterprint = function() { window.close(); } }</script>
+        `}).join('')}
+        <script>
+          ${SIGLAS.map(sigla => {
+            const codigoBarras = `${asignacionActual?.tropaCodigo || 'T000'}-${String(garron).padStart(3, '0')}-${lado.substring(0,3).toUpperCase()}-${sigla}`;
+            return `try { JsBarcode("#barcode-${sigla}", "${codigoBarras}", { format: "CODE128", width: 2, height: 60, displayValue: false, margin: 2 }); } catch(e) { document.getElementById("barcode-${sigla}").outerHTML = '<div class="barcode-fallback">${codigoBarras}</div>'; }`;
+          }).join('')}
+          window.onload = function() { window.print(); window.onafterprint = function() { window.close(); } }
+        </script>
       </body>
       </html>
     `)
