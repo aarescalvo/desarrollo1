@@ -733,12 +733,21 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
   // Imprimir rótulo usando la API de rótulos ZPL
   const imprimirRotulo = async (animal: Animal) => {
     try {
-      // Datos del animal para el rótulo
+      // Datos del animal para el rótulo - Formato compatible con Datamax DPL original
+      const fecha = new Date()
+      const codigoBarras = `${tropaSeleccionada?.codigo || ''}-${String(animal.numero).padStart(3, '0')}`
+      
       const datosRotulo = {
-        NUMERO: animal.numero,
+        // Variables para formato DPL original Datamax
+        CODIGO_BARRAS: codigoBarras,
+        ANIO: fecha.getFullYear().toString(),
         TROPA: tropaSeleccionada?.codigo || '',
-        TIPO: animal.tipoAnimal || '',
+        NUMERO: String(animal.numero).padStart(3, '0'),
+        ESTABFAENADOR: 'SOLEMAR ALIMENTARIA',
+        LETRA: animal.tipoAnimal?.charAt(0)?.toUpperCase() || '-',
         PESO: animal.pesoVivo?.toString() || '0',
+        // Variables adicionales para otros formatos
+        TIPO: animal.tipoAnimal || '',
         CODIGO: animal.codigo,
         RAZA: animal.raza || '',
         CARAVANA: animal.caravana || ''
@@ -1051,15 +1060,25 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
       return
     }
     
+    // Variables para formato DPL original Datamax
+    const fecha = new Date()
+    const codigoBarras = `${tropaSeleccionada?.codigo || ''}-${String(animal.numero).padStart(3, '0')}`
+    
     const datosRotulo = {
-      NUMERO: animal.numero,
+      // Variables para formato DPL original Datamax
+      CODIGO_BARRAS: codigoBarras,
+      ANIO: fecha.getFullYear().toString(),
       TROPA: tropaSeleccionada?.codigo || '',
-      TIPO: animal.tipoAnimal || '',
+      NUMERO: String(animal.numero).padStart(3, '0'),
+      ESTABFAENADOR: 'SOLEMAR ALIMENTARIA',
+      LETRA: animal.tipoAnimal?.charAt(0)?.toUpperCase() || '-',
       PESO: animal.pesoVivo?.toString() || '0',
+      // Variables adicionales para otros formatos
+      TIPO: animal.tipoAnimal || '',
       CODIGO: animal.codigo,
       RAZA: animal.raza || '',
       CARAVANA: animal.caravana || '',
-      FECHA: new Date().toLocaleDateString('es-AR')
+      FECHA: fecha.toLocaleDateString('es-AR')
     }
 
     try {

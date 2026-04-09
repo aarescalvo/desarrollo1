@@ -10,46 +10,34 @@ export async function POST(request: NextRequest) {
     const rotulosCreados = []
 
     // ========================================
-    // RÓTULO PESAJE INDIVIDUAL - 6cm x 9cm con CÓDIGO DE BARRAS
+    // RÓTULO PESAJE INDIVIDUAL - Formato probado del sistema anterior
     // ========================================
-    const rotuloPesajeIndividual = `
-<STX>L
+    const rotuloPesajeIndividual = `n
+M1084
+O0220
+SO
+d
+L
 D11
-H14
-PG
-C0010
-
-; ===== NÚMERO DE ANIMAL - MUY GRANDE Y RESALTADO =====
-; Centrado horizontalmente
-1K0150
-1V0020
-2f440
-3c0000
-eANIMAL #{NUMERO}
-
-; ===== TROPA =====
-1K0150
-1V0120
-2f220
-3c0000
-eTROPA: {TROPA}
-
-; ===== PESO EN kg - DESTACADO =====
-1K0150
-1V0180
-2f330
-3c0000
-ePESO: {PESO} kg
-
-; ===== CÓDIGO DE BARRAS CODE 128 =====
-; Posición: centrado, abajo
-; Formato: B=Code128, alto=50dots
-1K0080
-1V0260
-2B5201
-3c0000
-e{CODIGO_BARRAS}
-
+PO
+pG
+SO
+A2
+1e8406900410065C{CODIGO_BARRAS}
+ySE1
+1911A1200220110{CODIGO_BARRAS}
+1911A1201950010Año: 
+1911A1401940058{ANIO}
+1911A1201960215Tropa:
+1911A1401940270{TROPA}
+1911A1201660081N° de Animal:
+1911A1401650200{NUMERO}
+1911A1402320006{ESTABFAENADOR}
+1911A1201330010Tipificación:
+1911A2401260117{LETRA}
+1911A1201360215Peso:
+1911A1801330270{PESO} kg
+Q0001
 E
 `.trim()
 
@@ -74,7 +62,7 @@ E
 
       const nuevoRotulo = await db.rotulo.create({
         data: {
-          nombre: 'Pesaje Individual 9x6cm + Cód.Barras - Datamax',
+          nombre: 'Pesaje Individual 9x6cm - Datamax (Formato Original)',
           codigo: 'PESAJE_INDIVIDUAL_DPL_V2',
           tipo: 'PESAJE_INDIVIDUAL',
           tipoImpresora: 'DATAMAX',
@@ -85,12 +73,15 @@ E
           dpi: 203,
           activo: true,
           esDefault: true,
-          descripcion: 'Rótulo 9x6cm para pesaje individual. Incluye: Número animal (resaltado), Tropa, Peso y Código de barras Code128.',
+          descripcion: 'Rótulo 9x6cm para pesaje individual - Formato probado del sistema anterior. Código de barras, año, tropa, N° animal, tipificación y peso.',
           variables: JSON.stringify([
+            { variable: 'CODIGO_BARRAS', campo: 'codigo_barras', descripcion: 'Código para barras (Tropa+Numero)' },
+            { variable: 'ANIO', campo: 'anio', descripcion: 'Año de faena' },
+            { variable: 'TROPA', campo: 'tropa', descripcion: 'Número de tropa' },
             { variable: 'NUMERO', campo: 'numero', descripcion: 'Número de animal' },
-            { variable: 'TROPA', campo: 'tropa', descripcion: 'Código de tropa' },
-            { variable: 'PESO', campo: 'peso', descripcion: 'Peso en kg' },
-            { variable: 'CODIGO_BARRAS', campo: 'codigo_barras', descripcion: 'Código para barras (Tropa+Numero)' }
+            { variable: 'ESTABFAENADOR', campo: 'estabfaenador', descripcion: 'Establecimiento faenador' },
+            { variable: 'LETRA', campo: 'letra', descripcion: 'Letra de tipificación' },
+            { variable: 'PESO', campo: 'peso', descripcion: 'Peso en kg' }
           ])
         }
       })

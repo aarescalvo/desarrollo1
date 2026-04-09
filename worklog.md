@@ -1167,8 +1167,71 @@ Al terminar CADA sesión de trabajo, verificar:
 - **Minor (0.X.0)**: Nuevas funcionalidades
 - **Patch (0.0.X)**: Bug fixes, mejoras menores
 
-### Versión actual: **3.7.25**
-### Próxima versión sugerida: **3.7.26**
+### Versión actual: **3.7.26**
+### Próxima versión sugerida: **3.7.27**
+
+---
+Task ID: 1604
+Agent: main
+Task: Actualizar rótulo pesaje individual con formato DPL original probado
+
+Work Log:
+
+#### 1. Formato DPL Original del Sistema Anterior
+El usuario proporcionó el archivo DPL real que funcionaba con la Datamax Mark II:
+```
+n
+M1084
+O0220
+SO
+d
+L
+D11
+PO
+pG
+SO
+A2
+1e8406900410065Ccb
+ySE1
+1911A1200220110cb
+1911A1201950010Año: 
+1911A1401940058anio
+1911A1201960215Tropa:
+1911A1401940270nrotropa
+1911A1201660081N° de Animal:
+1911A1401650200nroanimal
+1911A1402320006estabfaenador
+1911A1201330010Tipificación:
+1911A2401260117letra
+1911A1201360215Peso:
+1911A1801330270kgs
+Q0001
+E
+```
+
+#### 2. Variables Actualizadas
+- CODIGO_BARRAS: {Tropa}-{Numero} para código de barras
+- ANIO: Año de faena
+- TROPA: Número de tropa
+- NUMERO: Número de animal (3 dígitos)
+- ESTABFAENADOR: SOLEMAR ALIMENTARIA
+- LETRA: Tipificación (primera letra del tipo de animal)
+- PESO: Peso en kg
+
+#### 3. Archivos Modificados
+**`src/app/api/rotulos/init-dpl/route.ts`:**
+- Rótulo pesaje individual actualizado con formato DPL original probado
+- Variables: CODIGO_BARRAS, ANIO, TROPA, NUMERO, ESTABFAENADOR, LETRA, PESO
+
+**`src/components/pesaje-individual-module.tsx`:**
+- Función `imprimirRotulo`: datosRotulo actualizado con todas las variables DPL
+- Función `handleReimprimirRotulo`: datosRotulo actualizado igualmente
+
+Stage Summary:
+- **Rótulo DPL con formato probado del sistema anterior** ✅
+- **Variables sincronizadas con formato original** ✅
+- **Funciones de impresión actualizadas** ✅
+- **Versión actualizada a 3.7.26** ✅
 
 ---
 Task ID: 1603
