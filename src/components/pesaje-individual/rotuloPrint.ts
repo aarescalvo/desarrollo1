@@ -53,7 +53,7 @@ function formatFechaLarga(): string {
 
 /**
  * ETIQUETA ANIMAL EN PIE - 9cm x 6cm (HORIZONTAL/LANDSCAPE)
- * Layout: Tropa arriba | N° Animal, KG Vivos, Código de barras abajo
+ * Layout: Tropa arriba | N° Animal + KG Vivos medio | Código de barras abajo (ancho completo)
  */
 export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
   const printWindow = window.open('', '_blank', 'width=360,height=240')
@@ -98,8 +98,8 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
           flex-direction: column;
         }
         
-        /* Tropa arriba - ANCHO COMPLETO */
-        .campo-tropa-top {
+        /* FILA 1: Tropa arriba - ANCHO COMPLETO */
+        .fila-tropa {
           width: 100%;
           display: flex;
           justify-content: space-between;
@@ -122,11 +122,11 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
           color: #000;
         }
         
-        /* Fila inferior con 3 campos */
-        .fila-inferior {
-          flex: 1;
+        /* FILA 2: N° Animal y KG Vivos - 2 CUADROS */
+        .fila-datos {
           display: flex;
           flex-direction: row;
+          border-bottom: 2px solid #000;
         }
         
         .campo {
@@ -136,7 +136,7 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
           justify-content: center;
           align-items: center;
           border-right: 2px solid #000;
-          padding: 1mm;
+          padding: 2mm;
         }
         
         .campo:last-child {
@@ -144,22 +144,22 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
         }
         
         .campo-label {
-          font-size: 7px;
+          font-size: 8px;
           font-weight: bold;
           text-transform: uppercase;
           color: #333;
-          margin-bottom: 0.5mm;
+          margin-bottom: 1mm;
         }
         
         .campo-value {
-          font-size: 14px;
+          font-size: 16px;
           font-weight: 900;
           text-align: center;
         }
         
         /* Campo Número */
         .campo-numero .campo-value {
-          font-size: 22px;
+          font-size: 26px;
         }
         
         /* Campo Peso */
@@ -174,30 +174,35 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
         
         .campo-peso .campo-value {
           color: #fff;
-          font-size: 16px;
+          font-size: 20px;
         }
         
         .campo-peso .peso-unit {
-          font-size: 9px;
+          font-size: 10px;
           font-weight: bold;
         }
         
-        /* Campo Código */
-        .campo-codigo {
-          flex: 1.2;
+        /* FILA 3: Código de barras - ANCHO COMPLETO */
+        .fila-codigo {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 1mm 2mm;
         }
         
         .barcode {
           font-family: 'Libre Barcode 39 Text', cursive;
-          font-size: 22px;
+          font-size: 32px;
           line-height: 1;
         }
         
         .barcode-text {
           font-family: 'Courier New', monospace;
-          font-size: 6px;
+          font-size: 7px;
           font-weight: bold;
-          letter-spacing: 0.5px;
+          letter-spacing: 1px;
           margin-top: 0.5mm;
         }
         
@@ -208,14 +213,14 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
     </head>
     <body>
       <div class="etiqueta">
-        <!-- Tropa arriba - ANCHO COMPLETO -->
-        <div class="campo-tropa-top">
+        <!-- FILA 1: Tropa -->
+        <div class="fila-tropa">
           <div class="tropa-label">TROPA</div>
           <div class="tropa-value">${tropaCodigo.replace(/\s/g, '')}</div>
         </div>
         
-        <!-- Fila inferior con 3 campos -->
-        <div class="fila-inferior">
+        <!-- FILA 2: N° Animal + KG Vivos -->
+        <div class="fila-datos">
           <!-- N° Animal -->
           <div class="campo campo-numero">
             <div class="campo-label">N° Animal</div>
@@ -227,12 +232,12 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
             <div class="campo-label">KG Vivos</div>
             <div class="campo-value">${pesoFormateado} <span class="peso-unit">kg</span></div>
           </div>
-          
-          <!-- Código de barras -->
-          <div class="campo campo-codigo">
-            <div class="barcode">*${codigoCompleto}*</div>
-            <div class="barcode-text">${codigoCompleto}</div>
-          </div>
+        </div>
+        
+        <!-- FILA 3: Código de barras - ANCHO COMPLETO -->
+        <div class="fila-codigo">
+          <div class="barcode">*${codigoCompleto}*</div>
+          <div class="barcode-text">${codigoCompleto}</div>
         </div>
       </div>
       
@@ -655,35 +660,39 @@ export function imprimirTicketPesajeA4({ tropa, animales, choferNombre, patente 
 
 /**
  * Vista previa del rótulo para diálogo
+ * Layout: Tropa | N° Animal + KG Vivos | Código de barras
  */
 export function getRotuloPreviewHTML(animal: Animal, tropaCodigo: string): string {
   const pesoFormateado = animal.pesoVivo?.toLocaleString('es-AR') || '0'
   const codigoCompleto = animal.codigo || `${tropaCodigo}-${String(animal.numero).padStart(3, '0')}`
   
   return `
-    <div class="border-2 border-black p-2 bg-white" style="width: 180px; height: 360px; display: flex; flex-direction: column;">
-      <!-- Tropa -->
-      <div class="text-center border-b-2 border-black pb-1 mb-1">
+    <div class="border-2 border-black bg-white" style="width: 270px; height: 180px; display: flex; flex-direction: column;">
+      <!-- FILA 1: Tropa -->
+      <div class="flex justify-between items-center px-2 py-1 border-b-2 border-black bg-gray-100">
         <div class="text-[8px] font-bold uppercase">Tropa</div>
-        <div class="text-2xl font-black">${tropaCodigo.replace(/\s/g, '')}</div>
+        <div class="text-lg font-black">${tropaCodigo.replace(/\s/g, '')}</div>
       </div>
       
-      <!-- N° Animal -->
-      <div class="text-center border-b-2 border-black pb-1 mb-1">
-        <div class="text-[7px] font-bold uppercase">N° Animal</div>
-        <div class="text-3xl font-black">${animal.numero}</div>
+      <!-- FILA 2: N° Animal + KG Vivos -->
+      <div class="flex flex-row border-b-2 border-black">
+        <!-- N° Animal -->
+        <div class="flex-1 flex flex-col justify-center items-center border-r-2 border-black py-2">
+          <div class="text-[7px] font-bold uppercase">N° Animal</div>
+          <div class="text-2xl font-black">${String(animal.numero).padStart(3, '0')}</div>
+        </div>
+        
+        <!-- KG Vivos -->
+        <div class="flex-1 flex flex-col justify-center items-center bg-black text-white py-2">
+          <div class="text-[7px] font-bold uppercase text-gray-300">KG Vivos</div>
+          <div class="text-xl font-black">${pesoFormateado}<span class="text-xs">kg</span></div>
+        </div>
       </div>
       
-      <!-- Peso -->
-      <div class="text-center bg-black text-white py-2 mb-1">
-        <div class="text-[7px] font-bold uppercase">KG Vivos</div>
-        <div class="text-2xl font-black">${pesoFormateado}<span class="text-sm">kg</span></div>
-      </div>
-      
-      <!-- Código de barras -->
+      <!-- FILA 3: Código de barras -->
       <div class="flex-1 flex flex-col justify-center items-center">
-        <div class="text-xl" style="font-family: 'Libre Barcode 39 Text', cursive;">*${codigoCompleto}*</div>
-        <div class="text-[8px] font-mono font-bold">${codigoCompleto}</div>
+        <div class="text-2xl" style="font-family: 'Libre Barcode 39 Text', cursive;">*${codigoCompleto}*</div>
+        <div class="text-[7px] font-mono font-bold">${codigoCompleto}</div>
       </div>
     </div>
   `
