@@ -396,7 +396,7 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
   }
 
   const imprimirRotuloHTML = (garron: number, lado: 'DERECHA' | 'IZQUIERDA', peso: number, esDecomiso: boolean = false) => {
-    const printWindow = window.open('', '_blank', 'width=400,height=600')
+    const printWindow = window.open('', '_blank', 'width=500,height=300')
     if (!printWindow) {
       toast.error('No se pudo abrir ventana de impresión')
       return
@@ -405,46 +405,219 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
     const tipificador = tipificadores.find(t => t.id === tipificadorId)
     const camara = camaras.find(c => c.id === camaraId)
     const fecha = new Date()
+    const tropaCodigo = (asignacionActual?.tropaCodigo || '').replace(/\s/g, '')
+    const pesoFormateado = peso.toFixed(1)
     
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Rótulos Garrón ${garron} - ${lado}</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Rótulos Media Res ${garron} - ${lado}</title>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
         <style>
-          @page { size: 100mm 70mm; margin: 3mm; }
-          body { font-family: Arial, sans-serif; padding: 5px; margin: 0; }
-          .rotulo { border: 2px solid black; padding: 5px; margin-bottom: 3mm; page-break-after: always; width: 94mm; height: 64mm; box-sizing: border-box; ${esDecomiso ? 'background: #fee2e2;' : ''} }
-          .header { text-align: center; border-bottom: 1px solid black; padding-bottom: 3px; margin-bottom: 3px; }
-          .empresa { font-size: 14px; font-weight: bold; }
-          .campo { display: flex; justify-content: space-between; padding: 1px 0; font-size: 11px; }
-          .sigla { font-size: 28px; font-weight: bold; text-align: center; background: #f0f0f0; padding: 3px; margin: 3px 0; }
-          .lado { font-size: 12px; text-align: center; font-weight: bold; background: ${lado === 'DERECHA' ? '#e3f2fd' : '#fce4ec'}; padding: 2px; }
-          .decomiso { background: #dc2626; color: white; text-align: center; font-weight: bold; padding: 2px; font-size: 12px; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          @page { size: 100mm 70mm landscape; margin: 0; }
+          body { font-family: Arial, sans-serif; background: white; }
+          .etiqueta {
+            border: 2px solid black;
+            width: 100mm;
+            height: 70mm;
+            display: flex;
+            flex-direction: column;
+            page-break-after: always;
+            ${esDecomiso ? 'background: #fee2e2;' : ''}
+          }
+          /* FILA 1: Tropa + Sigla - ANCHO COMPLETO */
+          .fila-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2mm 3mm;
+            border-bottom: 2px solid black;
+            background: #f0f0f0;
+          }
+          .tropa-section {
+            display: flex;
+            flex-direction: column;
+          }
+          .tropa-label {
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #333;
+          }
+          .tropa-value {
+            font-size: 20px;
+            font-weight: 900;
+            color: #000;
+          }
+          .sigla-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 20mm;
+          }
+          .sigla-value {
+            font-size: 32px;
+            font-weight: 900;
+            color: #000;
+            line-height: 1;
+          }
+          .sigla-desc {
+            font-size: 7px;
+            color: #666;
+          }
+          /* FILA 2: Datos en columnas */
+          .fila-datos {
+            display: flex;
+            flex-direction: row;
+            border-bottom: 2px solid black;
+          }
+          .campo {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2mm;
+          }
+          .campo-garron {
+            border-right: 1px solid #ccc;
+          }
+          .campo-lado {
+            border-right: 1px solid #ccc;
+            background: ${lado === 'DERECHA' ? '#e3f2fd' : '#fce4ec'};
+          }
+          .campo-peso {
+            background: #000;
+            color: #fff;
+          }
+          .campo-label {
+            font-size: 7px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #333;
+            margin-bottom: 1mm;
+          }
+          .campo-peso .campo-label {
+            color: #ccc;
+          }
+          .campo-value {
+            font-size: 14px;
+            font-weight: 900;
+            text-align: center;
+          }
+          .campo-garron .campo-value {
+            font-size: 22px;
+          }
+          .campo-peso .campo-value {
+            color: #fff;
+            font-size: 18px;
+          }
+          /* FILA 3: Código de barras - ANCHO COMPLETO */
+          .fila-barcode {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2mm;
+          }
+          #barcode-canvas {
+            max-width: 90mm;
+            height: auto;
+          }
+          .barcode-label {
+            font-size: 7px;
+            color: #666;
+            margin-top: 1mm;
+          }
+          .decomiso-banner {
+            background: #dc2626;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            padding: 1mm;
+            font-size: 10px;
+          }
+          @media print { body { padding: 0; } }
         </style>
       </head>
       <body>
-        ${SIGLAS.map(sigla => `
-          <div class="rotulo">
-            <div class="header"><div class="empresa">SOLEMAR ALIMENTARIA</div><div style="font-size: 9px;">Media Res - Faena</div></div>
-            ${esDecomiso ? '<div class="decomiso">⚠️ DECOMISO ⚠️</div>' : ''}
-            <div class="lado">${lado === 'DERECHA' ? 'MEDIA DERECHA' : 'MEDIA IZQUIERDA'}</div>
-            <div class="campo"><span>Garrón:</span><span style="font-weight: bold; font-size: 14px;">${garron}</span></div>
-            <div class="campo"><span>Tropa:</span><span>${asignacionActual?.tropaCodigo || '-'}</span></div>
-            <div class="campo"><span>Tipo:</span><span>${asignacionActual?.tipoAnimal || '-'}</span></div>
-            <div class="campo"><span>Peso:</span><span style="font-weight: bold;">${peso.toFixed(1)} kg</span></div>
-            <div class="campo"><span>Cámara:</span><span>${camara?.nombre || '-'}</span></div>
-            ${denticion ? `<div class="campo"><span>Dentición:</span><span>${denticion} dientes</span></div>` : ''}
-            <div class="sigla">${sigla}</div>
-            <div style="text-align: center; font-size: 10px;">${sigla === 'A' ? 'Asado' : sigla === 'T' ? 'Trasero' : 'Delantero'}</div>
-            ${tipificador ? `<div style="text-align: center; font-size: 8px; margin-top: 2px;">Tip.: ${tipificador.nombre} ${tipificador.apellido}</div>` : ''}
-          </div>
-        `).join('')}
-        <script>window.onload = function() { window.print(); window.onafterprint = function() { window.close(); } }</script>
+        ${SIGLAS.map((sigla, index) => {
+          const codigoBarras = `${tropaCodigo}-${String(garron).padStart(3, '0')}-${lado.charAt(0)}-${sigla}`;
+          return `
+            <div class="etiqueta">
+              ${esDecomiso ? '<div class="decomiso-banner">⚠️ DECOMISO ⚠️</div>' : ''}
+              <!-- FILA 1: Tropa + Sigla -->
+              <div class="fila-header">
+                <div class="tropa-section">
+                  <div class="tropa-label">TROPA</div>
+                  <div class="tropa-value">${tropaCodigo}</div>
+                </div>
+                <div class="sigla-section">
+                  <div class="sigla-value">${sigla}</div>
+                  <div class="sigla-desc">${sigla === 'A' ? 'Asado' : sigla === 'T' ? 'Trasero' : 'Delantero'}</div>
+                </div>
+              </div>
+              
+              <!-- FILA 2: Garrón | Lado | Peso -->
+              <div class="fila-datos">
+                <div class="campo campo-garron">
+                  <div class="campo-label">Garrón</div>
+                  <div class="campo-value">${String(garron).padStart(3, '0')}</div>
+                </div>
+                <div class="campo campo-lado">
+                  <div class="campo-label">Lado</div>
+                  <div class="campo-value">${lado === 'DERECHA' ? 'DER' : 'IZQ'}</div>
+                </div>
+                <div class="campo campo-peso">
+                  <div class="campo-label">KG</div>
+                  <div class="campo-value">${pesoFormateado}</div>
+                </div>
+              </div>
+              
+              <!-- FILA 3: Código de barras CODE128 -->
+              <div class="fila-barcode">
+                <svg id="barcode-${index}"></svg>
+                <div class="barcode-label">CODE128 - ${codigoBarras}</div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+        <script>
+          (function() {
+            ${SIGLAS.map((_, index) => {
+              const codigoBarras = `${tropaCodigo}-${String(garron).padStart(3, '0')}-${lado.charAt(0)}-${SIGLAS[index]}`;
+              return `
+              try {
+                JsBarcode("#barcode-${index}", "${codigoBarras}", {
+                  format: "CODE128",
+                  width: 2,
+                  height: 25,
+                  displayValue: false,
+                  margin: 0
+                });
+              } catch(e) {
+                document.getElementById('barcode-${index}').outerHTML = 
+                  '<div style="font-family:\\'Courier New\\',monospace;font-size:10px;letter-spacing:1px;">${codigoBarras}</div>';
+              }
+              `;
+            }).join('')}
+            
+            window.onload = function() {
+              setTimeout(function() { window.print(); }, 500);
+              window.onafterprint = function() { window.close(); };
+            };
+          })();
+        </script>
       </body>
       </html>
     `)
     printWindow.document.close()
+    printWindow.focus()
   }
 
   const formatearFecha = (fecha: Date): string => {

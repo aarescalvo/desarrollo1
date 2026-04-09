@@ -1167,8 +1167,8 @@ Al terminar CADA sesión de trabajo, verificar:
 - **Minor (0.X.0)**: Nuevas funcionalidades
 - **Patch (0.0.X)**: Bug fixes, mejoras menores
 
-### Versión actual: **3.7.27**
-### Próxima versión sugerida: **3.7.28**
+### Versión actual: **3.7.29**
+### Próxima versión sugerida: **3.7.30**
 
 ---
 Task ID: 1604
@@ -3783,4 +3783,59 @@ Stage Summary:
 - **Código de barras CODE128 real** ✅
 - **Versión actualizada a 3.7.28** ✅
 - **Push a ambos repositorios** ✅
+
+---
+Task ID: 1607
+Agent: main
+Task: Actualizar rótulo de media res en romaneo con código de barras CODE128
+
+Work Log:
+
+#### 1. Problema Identificado
+- El rótulo de media res en el módulo de romaneo estaba hardcodeado en HTML
+- No tenía código de barras CODE128/EAN-128
+- Layout desordenado sin estructura clara
+
+#### 2. Nuevo Layout del Rótulo de Media Res
+**Archivo:** `src/components/romaneo/index.tsx`
+
+**Estructura anterior:**
+- Header: SOLEMAR ALIMENTARIA
+- Múltiples campos en líneas separadas
+- Sin código de barras real
+
+**Estructura nueva (100x70mm):**
+```
+┌─────────────────────────────────────┐
+│ TROPA                    A          │  ← Fila 1: Tropa + Sigla
+│ B202600100              Asado       │
+├──────────┬──────────┬───────────────┤
+│  Garrón  │   Lado   │     KG        │  ← Fila 2: 3 columnas
+│   001    │   DER    │    80.5       │
+├──────────┴──────────┴───────────────┤
+│    ▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌                 │  ← Fila 3: CODE128
+│    B202600100-001-DER-A              │     (ancho completo)
+└─────────────────────────────────────┘
+```
+
+#### 3. Características Implementadas
+- **JsBarcode**: Genera código de barras CODE128 real en SVG
+- **3 rótulos por media**: A (Asado), T (Trasero), D (Delantero)
+- **Código de barras único**: TROPA-GARRON-LADO-SIGLA
+- **Falla gracefully**: Si JsBarcode falla, muestra texto monoespaciado
+- **Colores por lado**: DER=azul, IZQ=rosa
+- **Peso destacado**: Fondo negro con texto blanco
+- **Soporte decomiso**: Banner rojo + fondo rosado
+
+#### 4. Formato del Código de Barras
+```
+{TROPA}-{GARRON}-{LADO}-{SIGLA}
+Ejemplo: B202600100-001-DER-A
+```
+
+Stage Summary:
+- **Rótulo media res rediseñado** ✅
+- **Código de barras CODE128 con JsBarcode** ✅
+- **Layout de 3 filas consistente** ✅
+- **Versión actualizada a 3.7.29** ✅
 
