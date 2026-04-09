@@ -819,12 +819,18 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
       const pesoFormateado = animal.pesoVivo?.toLocaleString('es-AR') || '0'
       const codigoCompleto = animal.codigo || `${tropaSeleccionada?.codigo || ''}-${String(animal.numero).padStart(3, '0')}`
       
+      // Generar código EAN-128/GS1-128 con Application Identifiers
+      // Formato: (01)GTIN(21)Serial(310x)Peso
+      // Para simplificar usamos CODE128 con el código de barras del animal
+      const codigoEAN128 = codigoCompleto; // El código completo sirve como identificador único
+
       const htmlContent = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rótulo ${codigoCompleto}</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     @page { size: 100mm 50mm landscape; margin: 0; }
@@ -841,8 +847,8 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
       display: flex;
       flex-direction: column;
     }
-    /* Tropa arriba - ANCHO COMPLETO */
-    .campo-tropa-top {
+    /* FILA 1: Tropa - ANCHO COMPLETO */
+    .fila-tropa {
       width: 100%;
       display: flex;
       justify-content: space-between;
@@ -858,15 +864,15 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
       color: #333;
     }
     .tropa-value {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 900;
       color: #000;
     }
-    /* Fila inferior con 3 campos */
-    .fila-inferior {
-      flex: 1;
+    /* FILA 2: N° Animal y KG Vivos - 2 COLUMNAS */
+    .fila-datos {
       display: flex;
       flex-direction: row;
+      border-bottom: 2px solid black;
     }
     .campo {
       flex: 1;
@@ -874,29 +880,26 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      border-right: 2px solid black;
-      padding: 2mm;
+      padding: 3mm;
     }
-    .campo:last-child {
-      border-right: none;
+    .campo-animal {
+      border-right: 2px solid black;
     }
     .campo-label {
-      font-size: 8px;
+      font-size: 9px;
       font-weight: bold;
       text-transform: uppercase;
       color: #333;
       margin-bottom: 1mm;
     }
     .campo-value {
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 900;
       text-align: center;
     }
-    /* Campo Número */
-    .campo-numero .campo-value {
-      font-size: 28px;
+    .campo-animal .campo-value {
+      font-size: 32px;
     }
-    /* Campo Peso */
     .campo-peso {
       background: #000;
       color: #fff;
@@ -906,26 +909,28 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
     }
     .campo-peso .campo-value {
       color: #fff;
-      font-size: 20px;
+      font-size: 24px;
     }
-    .campo-peso .peso-unit {
-      font-size: 10px;
+    .peso-unit {
+      font-size: 12px;
       font-weight: bold;
     }
-    /* Campo Código */
-    .campo-codigo {
-      flex: 1.3;
+    /* FILA 3: Código de barras EAN-128 - ANCHO COMPLETO */
+    .fila-barcode {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2mm;
     }
-    .barcode {
-      font-family: 'Courier New', monospace;
-      font-size: 18px;
-      letter-spacing: 2px;
-      line-height: 1;
+    #barcode-canvas {
+      max-width: 90mm;
+      height: auto;
     }
-    .barcode-text {
-      font-family: 'Courier New', monospace;
+    .barcode-label {
       font-size: 8px;
-      font-weight: bold;
+      color: #666;
       margin-top: 1mm;
     }
     @media print { 
@@ -935,39 +940,52 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
 </head>
 <body>
   <div class="etiqueta">
-    <!-- Tropa arriba - ANCHO COMPLETO -->
-    <div class="campo-tropa-top">
+    <!-- FILA 1: Tropa - ANCHO COMPLETO -->
+    <div class="fila-tropa">
       <div class="tropa-label">TROPA</div>
       <div class="tropa-value">${(tropaSeleccionada?.codigo || '').replace(/\s/g, '')}</div>
     </div>
     
-    <!-- Fila inferior con 3 campos -->
-    <div class="fila-inferior">
-      <!-- N° Animal -->
-      <div class="campo campo-numero">
+    <!-- FILA 2: N° Animal | KG Vivos - 2 COLUMNAS -->
+    <div class="fila-datos">
+      <div class="campo campo-animal">
         <div class="campo-label">N° Animal</div>
         <div class="campo-value">${String(animal.numero).padStart(3, '0')}</div>
       </div>
       
-      <!-- KG Vivos -->
       <div class="campo campo-peso">
         <div class="campo-label">KG Vivos</div>
         <div class="campo-value">${pesoFormateado} <span class="peso-unit">kg</span></div>
       </div>
-      
-      <!-- Código de barras -->
-      <div class="campo campo-codigo">
-        <div class="barcode">*${codigoCompleto}*</div>
-        <div class="barcode-text">${codigoCompleto}</div>
-      </div>
+    </div>
+    
+    <!-- FILA 3: Código de barras EAN-128 - ANCHO COMPLETO -->
+    <div class="fila-barcode">
+      <svg id="barcode-canvas"></svg>
+      <div class="barcode-label">CODE128 - ${codigoEAN128}</div>
     </div>
   </div>
   <script>
     (function() {
+      // Generar código de barras CODE128 (base de EAN-128/GS1-128)
+      try {
+        JsBarcode("#barcode-canvas", "${codigoEAN128}", {
+          format: "CODE128",
+          width: 2,
+          height: 30,
+          displayValue: false,
+          margin: 0
+        });
+      } catch(e) {
+        // Fallback si JsBarcode falla
+        document.getElementById('barcode-canvas').outerHTML = 
+          '<div style="font-family:\\'Courier New\\',monospace;font-size:14px;letter-spacing:2px;">${codigoEAN128}</div>';
+      }
+      
       window.onload = function() {
         setTimeout(function() {
           window.print();
-        }, 300);
+        }, 500);
         window.onafterprint = function() { 
           window.close();
         };
