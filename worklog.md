@@ -3743,3 +3743,44 @@ Stage Summary:
 - **Script actualizar-desde-github.bat creado** ✅
 - **Push a ambos repositorios** (pendiente)
 
+
+---
+Task ID: 1606
+Agent: main
+Task: Actualizar rótulo pesaje individual con layout de 3 filas y código de barras CODE128
+
+Work Log:
+
+#### 1. Layout Nuevo del Rótulo
+**Archivo:** `src/components/pesaje-individual-module.tsx`
+
+**Estructura anterior (incorrecta):**
+- Fila 1: Tropa
+- Fila 2: N° Animal | KG Vivos | Código (3 columnas)
+
+**Estructura nueva (correcta):**
+- Fila 1: Tropa (ancho completo)
+- Fila 2: N° Animal | KG Vivos (2 columnas)
+- Fila 3: Código de barras CODE128 (ancho completo al pie)
+
+#### 2. Código de Barras EAN-128/GS1-128
+- Usa biblioteca JsBarcode para generar código de barras real
+- Formato CODE128 (base de EAN-128)
+- Se genera un SVG con el código del animal
+- Fallback a texto si JsBarcode falla
+
+#### 3. Comandos para Actualizar en Producción
+```powershell
+cd C:\TrazaSole
+git fetch produccion
+git reset --hard produccion/main
+Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+bun run dev
+```
+
+Stage Summary:
+- **Layout 3 filas implementado** ✅
+- **Código de barras CODE128 real** ✅
+- **Versión actualizada a 3.7.28** ✅
+- **Push a ambos repositorios** ✅
+
