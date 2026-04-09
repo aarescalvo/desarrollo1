@@ -53,7 +53,9 @@ function formatFechaLarga(): string {
 
 /**
  * ETIQUETA ANIMAL EN PIE - 9cm x 6cm (HORIZONTAL/LANDSCAPE)
- * Layout: Tropa arriba | N° Animal + KG Vivos medio | Código de barras abajo (ancho completo)
+ * Layout: Tropa arriba | N° Animal + KG Vivos medio | Código de barras CODE128 abajo (ancho completo)
+ * 
+ * El código de barras se genera con JsBarcode en formato CODE128 (compatible con GS1-128/EAN-128)
  */
 export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
   const printWindow = window.open('', '_blank', 'width=360,height=240')
@@ -62,6 +64,9 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
   const pesoFormateado = animal.pesoVivo?.toLocaleString('es-AR') || '0'
   const codigoCompleto = animal.codigo || `${tropaCodigo}-${String(animal.numero).padStart(3, '0')}`
   
+  // Código de barras limpio (sin guiones para mejor lectura)
+  const codigoBarrasLimpio = codigoCompleto.replace(/[^A-Za-z0-9]/g, '')
+  
   printWindow.document.write(`
     <!DOCTYPE html>
     <html lang="es">
@@ -69,7 +74,7 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Etiqueta ${codigoCompleto}</title>
-      <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">
+      <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
       <style>
         @page { 
           size: 90mm 60mm landscape;
@@ -192,10 +197,9 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
           padding: 1mm 2mm;
         }
         
-        .barcode {
-          font-family: 'Libre Barcode 39 Text', cursive;
-          font-size: 32px;
-          line-height: 1;
+        .barcode-canvas {
+          max-width: 100%;
+          height: auto;
         }
         
         .barcode-text {
@@ -234,14 +238,29 @@ export function imprimirRotulo({ animal, tropaCodigo }: ImprimirRotuloOptions) {
           </div>
         </div>
         
-        <!-- FILA 3: Código de barras - ANCHO COMPLETO -->
+        <!-- FILA 3: Código de barras CODE128 - ANCHO COMPLETO -->
         <div class="fila-codigo">
-          <div class="barcode">*${codigoCompleto}*</div>
+          <svg id="barcode"></svg>
           <div class="barcode-text">${codigoCompleto}</div>
         </div>
       </div>
       
       <script>
+        // Generar código de barras CODE128 con JsBarcode
+        try {
+          JsBarcode("#barcode", "${codigoBarrasLimpio}", {
+            format: "CODE128",
+            width: 2,
+            height: 50,
+            displayValue: false,
+            margin: 0,
+            fontSize: 12,
+            background: "transparent"
+          });
+        } catch(e) {
+          console.error("Error generando código de barras:", e);
+        }
+        
         window.onload = function() { 
           setTimeout(function() {
             window.print(); 
@@ -660,7 +679,7 @@ export function imprimirTicketPesajeA4({ tropa, animales, choferNombre, patente 
 
 /**
  * Vista previa del rótulo para diálogo
- * Layout: Tropa | N° Animal + KG Vivos | Código de barras
+ * Layout: Tropa | N° Animal + KG Vivos | Código de barras CODE128
  */
 export function getRotuloPreviewHTML(animal: Animal, tropaCodigo: string): string {
   const pesoFormateado = animal.pesoVivo?.toLocaleString('es-AR') || '0'
@@ -689,10 +708,75 @@ export function getRotuloPreviewHTML(animal: Animal, tropaCodigo: string): strin
         </div>
       </div>
       
-      <!-- FILA 3: Código de barras -->
-      <div class="flex-1 flex flex-col justify-center items-center">
-        <div class="text-2xl" style="font-family: 'Libre Barcode 39 Text', cursive;">*${codigoCompleto}*</div>
-        <div class="text-[7px] font-mono font-bold">${codigoCompleto}</div>
+      <!-- FILA 3: Código de barras CODE128 -->
+      <div class="flex-1 flex flex-col justify-center items-center py-1">
+        <div class="text-[8px] text-gray-500 mb-0.5">CODE128</div>
+        <div class="w-full px-2 flex justify-center">
+          <svg class="max-w-full" style="height: 35px;">
+            <!-- Representación visual aproximada del código de barras -->
+            <rect x="0" y="0" width="2" height="35" fill="black"/>
+            <rect x="4" y="0" width="1" height="35" fill="black"/>
+            <rect x="7" y="0" width="2" height="35" fill="black"/>
+            <rect x="11" y="0" width="1" height="35" fill="black"/>
+            <rect x="14" y="0" width="3" height="35" fill="black"/>
+            <rect x="19" y="0" width="1" height="35" fill="black"/>
+            <rect x="22" y="0" width="2" height="35" fill="black"/>
+            <rect x="26" y="0" width="1" height="35" fill="black"/>
+            <rect x="29" y="0" width="2" height="35" fill="black"/>
+            <rect x="33" y="0" width="1" height="35" fill="black"/>
+            <rect x="36" y="0" width="3" height="35" fill="black"/>
+            <rect x="41" y="0" width="1" height="35" fill="black"/>
+            <rect x="44" y="0" width="2" height="35" fill="black"/>
+            <rect x="48" y="0" width="1" height="35" fill="black"/>
+            <rect x="51" y="0" width="2" height="35" fill="black"/>
+            <rect x="55" y="0" width="1" height="35" fill="black"/>
+            <rect x="58" y="0" width="3" height="35" fill="black"/>
+            <rect x="63" y="0" width="1" height="35" fill="black"/>
+            <rect x="66" y="0" width="2" height="35" fill="black"/>
+            <rect x="70" y="0" width="1" height="35" fill="black"/>
+            <rect x="73" y="0" width="2" height="35" fill="black"/>
+            <rect x="77" y="0" width="1" height="35" fill="black"/>
+            <rect x="80" y="0" width="3" height="35" fill="black"/>
+            <rect x="85" y="0" width="1" height="35" fill="black"/>
+            <rect x="88" y="0" width="2" height="35" fill="black"/>
+            <rect x="92" y="0" width="1" height="35" fill="black"/>
+            <rect x="95" y="0" width="2" height="35" fill="black"/>
+            <rect x="99" y="0" width="1" height="35" fill="black"/>
+            <rect x="102" y="0" width="3" height="35" fill="black"/>
+            <rect x="107" y="0" width="1" height="35" fill="black"/>
+            <rect x="110" y="0" width="2" height="35" fill="black"/>
+            <rect x="114" y="0" width="1" height="35" fill="black"/>
+            <rect x="117" y="0" width="2" height="35" fill="black"/>
+            <rect x="121" y="0" width="1" height="35" fill="black"/>
+            <rect x="124" y="0" width="3" height="35" fill="black"/>
+            <rect x="129" y="0" width="1" height="35" fill="black"/>
+            <rect x="132" y="0" width="2" height="35" fill="black"/>
+            <rect x="136" y="0" width="1" height="35" fill="black"/>
+            <rect x="139" y="0" width="2" height="35" fill="black"/>
+            <rect x="143" y="0" width="1" height="35" fill="black"/>
+            <rect x="146" y="0" width="3" height="35" fill="black"/>
+            <rect x="151" y="0" width="1" height="35" fill="black"/>
+            <rect x="154" y="0" width="2" height="35" fill="black"/>
+            <rect x="158" y="0" width="1" height="35" fill="black"/>
+            <rect x="161" y="0" width="2" height="35" fill="black"/>
+            <rect x="165" y="0" width="1" height="35" fill="black"/>
+            <rect x="168" y="0" width="3" height="35" fill="black"/>
+            <rect x="173" y="0" width="1" height="35" fill="black"/>
+            <rect x="176" y="0" width="2" height="35" fill="black"/>
+            <rect x="180" y="0" width="1" height="35" fill="black"/>
+            <rect x="183" y="0" width="2" height="35" fill="black"/>
+            <rect x="187" y="0" width="1" height="35" fill="black"/>
+            <rect x="190" y="0" width="3" height="35" fill="black"/>
+            <rect x="195" y="0" width="1" height="35" fill="black"/>
+            <rect x="198" y="0" width="2" height="35" fill="black"/>
+            <rect x="202" y="0" width="1" height="35" fill="black"/>
+            <rect x="205" y="0" width="2" height="35" fill="black"/>
+            <rect x="209" y="0" width="2" height="35" fill="black"/>
+            <rect x="213" y="0" width="1" height="35" fill="black"/>
+            <rect x="216" y="0" width="3" height="35" fill="black"/>
+          </svg>
+        </div>
+        <div class="text-[7px] font-mono font-bold mt-0.5">${codigoCompleto}</div>
       </div>
     </div>
   `
